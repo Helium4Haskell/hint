@@ -21,6 +21,7 @@ data InterpreterState
        , compilationCompleted  :: Bool
        , evaluationAborted     :: Bool
        , running               :: Maybe (String -> IO(), Process (), Int)
+       , alreadyDead           :: Bool
        , tempFiles             :: [String]
        , sequenceNr            :: Int
        , dataAvailableCallback :: Interpreter -> InterpreterOutput -> IO ()
@@ -52,6 +53,7 @@ create onOutput onFinish libDirs binDirs
                  , compilationCompleted  = False
                  , evaluationAborted     = True
                  , running               = Nothing
+                 , alreadyDead           = True
                  , tempFiles             = []
                  , sequenceNr            = 0
                  , dataAvailableCallback = onOutput
@@ -77,7 +79,6 @@ evaluate window interpreter expression
 
            -- create commandline for this tempfile
            libpathString <- concatPaths (libraryDirs state') "."
-           putStrLn ("libPath: " ++ libpathString)
            (Right command) <- commandline "helium" ["-P", libpathString, tempfile] (binaryDirs state')
 
            -- execute helium.
@@ -89,8 +90,9 @@ evaluate window interpreter expression
 
            -- register the process and processid so that we are able to kill
            -- the interpreter if neccesairy.
-           let state'' = state' { running   = Just (sendF, process, pid)
-                                , tempFiles = tempFiles state' ++ [tempfile]
+           let state'' = state' { running     = Just (sendF, process, pid)
+                                , alreadyDead = False
+                                , tempFiles   = tempFiles state' ++ [tempfile]
                                 }
            varSet interpreter state''
 
@@ -109,10 +111,9 @@ evaluate window interpreter expression
                 ( do -- Aborted: dump any remaining output and remove temp-files
                      let aborted = evaluationAborted state
                      when ( aborted )
-                          ( do putStrLn "::aborted"
-                               addInterpreterOutput interpreter seqNr False ""
+                          ( do addInterpreterOutput interpreter seqNr False ""
                                removeTempFiles interpreter seqNr
-                               varSet interpreter state { running = Nothing }
+                               varSet interpreter state { running = Nothing, alreadyDead = True }
                                reset interpreter
                           )
 
@@ -120,13 +121,10 @@ evaluate window interpreter expression
                      when ( not aborted )
                           ( do input <- pendingOutput interpreter
                                let (modules, strangeOutput) = O.parse input
-                               varSet interpreter state { reversedPendingOutput = [] }
-                               
-                               putStrLn "\n--RESULTS--\n"
-                               putStrLn (show modules)
-                               putStrLn "\n--STRANGE OUTPUT--\n"
-                               putStrLn (show strangeOutput)
-                               putStrLn "\n"
+                               varSet interpreter state { reversedPendingOutput = []
+                                                        , alreadyDead = True
+                                                        , compilationCompleted = True
+                                                        }
 
                                -- publish results
                                publishCompilationResults interpreter modules strangeOutput
@@ -159,8 +157,7 @@ evaluate window interpreter expression
 
            -- create commandline for this lvm file
            libpathString <- concatPaths (libraryDirs state) "."
-           putStrLn libpathString
-           (Right command) <- commandline "helium" ["-P", libpathString, lvmModule] (binaryDirs state)
+           (Right command) <- commandline "lvmrun" ["-P" ++ libpathString, lvmModule] (binaryDirs state)
 
            -- execute lvmrun.
            (sendF,process,pid) <- processExecAsync window command 32
@@ -170,8 +167,9 @@ evaluate window interpreter expression
 
            -- register the process and processid so that we are able to kill
            -- the interpreter if neccesary.
-           varSet interpreter state { running   = Just (sendF, process, pid)
-                                    , tempFiles = tempFiles state ++ [lvmModule]
+           varSet interpreter state { running     = Just (sendF, process, pid)
+                                    , tempFiles   = tempFiles state ++ [lvmModule]
+                                    , alreadyDead = False
                                     }
 
 
@@ -181,7 +179,7 @@ evaluate window interpreter expression
       = do state <- varGet interpreter
            when ( seqNr == sequenceNr state )
                 ( do removeTempFiles interpreter seqNr
-                     varSet interpreter state { running = Nothing }
+                     varSet interpreter state { running = Nothing, alreadyDead = True }
                      reset interpreter
                      finishCallback state interpreter
                 )
@@ -203,8 +201,7 @@ evaluate window interpreter expression
     -- output the results of one module
     publishModule :: Interpreter -> O.Module -> IO ()
     publishModule interpreter m
-      = do putStrLn "::publishModule"
-           state <- varGet interpreter
+      = do state <- varGet interpreter
            onlyModuleName <- getNameOnly $ O.name m
            let isMainModule = onlyModuleName == interpreterMainModule
            let publish = dataAvailableCallback state interpreter
@@ -234,9 +231,9 @@ evaluate window interpreter expression
            let publish str lnk = dataAvailableCallback state interpreter $ case notification of
                                                                              O.Error   _ _ -> ErrorOutput str lnk
                                                                              O.Warning _ _ -> WarningOutput str lnk
-           let (locations, text) = case notification of
-                                     O.Error l s   -> (l, s)
-                                     O.Warning l s -> (l, s)
+           let (locations, text, isWarning) = case notification of
+                                                O.Error l s   -> (l, s, False)
+                                                O.Warning l s -> (l, s, True)
 
            -- publish the location of the notification
            when (not isMainModule && null locations)
@@ -244,7 +241,8 @@ evaluate window interpreter expression
                   publish ": " Nothing
 
            -- publish the notification text
-           publish text Nothing
+           when (not (isMainModule && isWarning))
+             $ publish text Nothing
       where
         publishLink :: (String -> Maybe InFileLink -> IO ()) -> Int -> Int -> IO ()
         publishLink pf r c
@@ -307,14 +305,16 @@ reset interpreter
   = do state <- varGet interpreter
        maybe ( return () )
              ( \(_, _, pid) ->
-                 do kill pid wxSIGKILL
+                 do when (not $ alreadyDead state)
+                      $ unitIO $ kill pid wxSIGKILL
                     removeTempFiles interpreter (sequenceNr state)
              )
              ( running state )
 
        varSet interpreter state { compilationCompleted = False
-                                , evaluationAborted = True
-                                , running = Nothing
+                                , evaluationAborted    = True
+                                , running              = Nothing
+                                , alreadyDead          = True
                                 }
 
 

@@ -7,6 +7,8 @@ import Data.Maybe
 import Graphics.UI.WX
 import TextCtrlConsole
 import Interpreter
+import Path
+import System.Environment
 
 
 
@@ -34,8 +36,12 @@ initHintConsole :: TextCtrlConsole -> IO ()
 initHintConsole console
   = do clear console
        addData console SpecialStyle Nothing "Welcome to Hint, the interactive shell to Helium.\n\n"
+       
+       [installdir] <- getArgs
+       libdir <- pathAdd installdir "lib"
+       bindir <- pathAdd installdir "bin"
 
-       interpreter <- create (hintOnOutput console) (hintOnFinish console) ["C:\\Program Files\\Helium\\lib"] ["C:\\Program Files\\Helium\\bin"]
+       interpreter <- create (hintOnOutput console) (hintOnFinish console) [libdir] [bindir]
 
        set console [ rememberFutureInput := True
                    , userInputHandler    := hintOnCommand interpreter

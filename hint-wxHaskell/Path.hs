@@ -1,5 +1,5 @@
 -- | Use this module to build commandline strings.
-module Path (commandline, getTempFilename, concatPaths, replaceSuffix, getNameOnly)
+module Path (commandline, getTempFilename, concatPaths, replaceSuffix, getNameOnly, pathAdd)
 where
 
 
@@ -113,6 +113,13 @@ concatPath sep pathBegin pathEnd
     stripTrailingSeparator :: Char -> FilePath -> FilePath
     stripTrailingSeparator sep
       = reverse . dropWhile (== sep) . reverse
+
+
+-- | Adds the second path to the first path.
+pathAdd :: FilePath -> FilePath -> IO FilePath
+pathAdd prefix suffix
+  = do sep <- getDirectorySeparator
+       return $ concatPath sep prefix suffix
 
 
 -- | Returns the character that separates paths.

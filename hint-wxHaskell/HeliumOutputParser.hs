@@ -330,13 +330,13 @@ pFirstNotificationLine
 
     hasColumn input
 
-      = let result@(l, r) = break (== ':') input
+      = let (l, r) = break (== ':') input
 
          in if null r
 
             then Nothing
 
-            else Just result
+            else Just (l, drop 1 r)
 
 
 
