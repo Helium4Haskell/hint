@@ -1,5 +1,5 @@
 -- | Use this module to build commandline strings.
-module Path (commandline, getTempFilename, concatPaths)
+module Path (commandline, getTempFilename, concatPaths, replaceSuffix)
 where
 
 
@@ -23,6 +23,7 @@ import System.Environment
 --     commandline "helium" ["-P", ".;C:\\Program Files\\Helium\\Lib"] ["C:\\Program Files\\Helium\\Bin"]
 --   Produces:
 --     "C:\Program Files\Helium\Bin\helium.exe" "-P" ".;C:\Program Files\Helium\Lib"
+
 commandline :: String -> [String] -> [FilePath] -> IO (Either String String)
 commandline command parameters binaryDirectories
   = do isWinOS <- isWindowsOS
@@ -55,6 +56,7 @@ concatPaths paths initial
 -- | Split a list on a token.
 split :: Eq a => a -> [a] -> [[a]]
 split = split' []
+
 
 split' :: Eq a => [a] -> a -> [a] -> [[a]]
 split' acc _ [] = [acc]
@@ -185,4 +187,10 @@ isWindowsOS
     or p q
       = do b <- p
            if b then return b else q
+
+
+-- | replaces the origional suffix by the replacement suffix
+replaceSuffix :: String -> String -> String -> String
+replaceSuffix orig replacement
+  = (++ replacement) . reverse . drop (length orig) . reverse
 

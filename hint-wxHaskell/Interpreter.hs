@@ -9,6 +9,7 @@ import Graphics.UI.WXCore
 import Graphics.UI.WX
 import System.Directory
 import Path
+import qualified HeliumOutputParser as O
 
 
 
@@ -19,7 +20,8 @@ data InterpreterState
   = IS { reversedPendingOutput :: [String]
        , compilationCompleted  :: Bool
        , evaluationAborted     :: Bool
-       , running               :: Maybe (Process (), Int, [String])
+       , running               :: Maybe (String -> IO(), Process (), Int)
+       , tempFiles             :: [String]
        , sequenceNr            :: Int
        , dataAvailableCallback :: Interpreter -> InterpreterOutput -> IO ()
        , finishCallback        :: Interpreter -> IO ()
@@ -41,6 +43,7 @@ create onOutput onFinish libDirs binDirs
                  , compilationCompleted  = False
                  , evaluationAborted     = True
                  , running               = Nothing
+                 , tempFiles             = []
                  , sequenceNr            = 0
                  , dataAvailableCallback = onOutput
                  , finishCallback        = onFinish
@@ -62,17 +65,23 @@ evaluate window interpreter expression
            writeMainModule tempfile expression
 
            -- create commandline for this tempfile
-           libpathString <- concatPaths (libraryDirs state) "."
+           libpathString <- concatPaths (libraryDirs state') "."
            putStrLn libpathString
-           (Right command) <- commandline "helium" ["-P", libpathString, tempfile] (binaryDirs state)
+           (Right command) <- commandline "helium" ["-P", libpathString, tempfile] (binaryDirs state')
 
            -- execute helium.
-           (_,process,pid) <- processExecAsync window command 64
-                                               (onEndProcess window)
-                                               (\s _ -> addInterpreterOutput interpreter (sequenceNr state) False s)
-                                               (\s _ -> addInterpreterOutput interpreter (sequenceNr state) True s)
+           -- interpreter will be executed when this process is finished.
+           (sendF,process,pid) <- processExecAsync window command 512
+                                                   (onEndCompilerProcess tempfile (sequenceNr state'))
+                                                   (\s _ -> addInterpreterOutput interpreter (sequenceNr state') False s)
+                                                   (\s _ -> addInterpreterOutput interpreter (sequenceNr state') True s)
 
-           -- register lvmrun for evaluation.
+           -- register the process and processid so that we are able to kill
+           -- the interpreter if neccesairy.
+           let state'' = state' { running   = Just (sendF, process, pid)
+                                , tempFiles = tempFiles state' ++ [tempfile]
+                                }
+           varSet interpreter state''
 
            return ()
 
@@ -81,11 +90,105 @@ evaluate window interpreter expression
     writeMainModule path expression
       = writeFile path ( "module Interpreter where\r\ninterpreter_main = " ++ expression ++ "\r\n" )
 
-    onEndProcess
-      = undefined
+    -- ensure that the compile process has been completed and execute lvmrun.
+    onEndCompilerProcess :: String -> Int -> Int -> IO ()
+    onEndCompilerProcess sourcefile seqNr _
+      = do state <- varGet interpreter
+           when (seqNr == sequenceNr state)
+                ( do -- Aborted: dump any remaining output and remove temp-files
+                     let aborted = evaluationAborted state
+                     when ( aborted )
+                          ( do addInterpreterOutput interpreter seqNr False ""
+                               removeTempFiles interpreter seqNr
+                               varSet interpreter state { running = Nothing }
+                               reset interpreter
+                          )
+
+                     -- parse the results to investigate errors
+                     when ( not aborted )
+                          ( do input <- pendingOutput interpreter
+                               let (modules, strangeOutput) = O.parse input
+                               varSet interpreter state { reversedPendingOutput = [] }
+
+                               -- publish results
+                               onCompilationCompleted modules strangeOutput
+
+                               let noInternalError = null strangeOutput
+                               let compilationOk = all ( \m -> case O.result m of
+                                                                 O.FinishedOk             -> True
+                                                                 O.FinishedWithWarnings _ -> True
+                                                                 _                        -> False
+                                                       ) modules
+                               let proceedWithLVM = noInternalError && compilationOk
+
+                               when ( proceedWithLVM )
+                                    ( executeLVM sourcefile )
+
+                               when ( not $ proceedWithLVM )
+                                    ( do reset interpreter
+                                         finishCallback state interpreter
+                                    )
+                          )
+                )
+           return ()
 
 
--- Add output to the interpreter
+    -- executes the lvm. Supply the initial source file (not the module file)
+    executeLVM :: String -> IO ()
+    executeLVM sourceModule
+      = do let lvmModule = replaceSuffix ".hs" ".lvm" sourceModule
+           state <- varGet interpreter
+
+           -- create commandline for this lvm file
+           libpathString <- concatPaths (libraryDirs state) "."
+           putStrLn libpathString
+           (Right command) <- commandline "helium" ["-P", libpathString, lvmModule] (binaryDirs state)
+
+           -- execute lvmrun.
+           (sendF,process,pid) <- processExecAsync window command 32
+                                                   (onEndLvmProcess (sequenceNr state))
+                                                   (\s _ -> addInterpreterOutput interpreter (sequenceNr state) False s)
+                                                   (\s _ -> addInterpreterOutput interpreter (sequenceNr state) True s)
+
+           -- register the process and processid so that we are able to kill
+           -- the interpreter if neccesary.
+           varSet interpreter state { running   = Just (sendF, process, pid)
+                                    , tempFiles = tempFiles state ++ [lvmModule]
+                                    }
+
+
+    -- called when lvm is terminated.
+    onEndLvmProcess :: Int -> Int -> IO ()
+    onEndLvmProcess seqNr _
+      = do state <- varGet interpreter
+           when ( seqNr == sequenceNr state )
+                ( do removeTempFiles interpreter seqNr
+                     varSet interpreter state { running = Nothing }
+                     reset interpreter
+                     finishCallback state interpreter
+                )
+
+
+    -- output the results
+    onCompilationCompleted :: [O.Module] -> String -> IO ()
+    onCompilationCompleted modules strangeOutput
+      = do putStrLn "done"
+           return ()
+
+
+-- remove temporary files created while compiling.
+removeTempFiles :: Interpreter -> Int -> IO ()
+removeTempFiles interpreter seqNr
+  = do state <- varGet interpreter
+       when ( seqNr == sequenceNr state )
+            ( mapM_ removeTempFile (tempFiles state) )
+  where
+    removeTempFile :: FilePath -> IO ()
+    removeTempFile
+      = unitIO . try . removeFile
+
+
+-- add output to the interpreter.
 addInterpreterOutput :: Interpreter -> Int -> Bool -> String -> IO ()
 addInterpreterOutput interpreter seqNr isError text
   = do state <- varGet interpreter
@@ -127,9 +230,9 @@ reset :: Interpreter -> IO ()
 reset interpreter
   = do state <- varGet interpreter
        maybe ( return () )
-             ( \(_, pid, tempFiles) ->
+             ( \(_, _, pid) ->
                  do kill pid wxSIGKILL
-                    mapM_ removeFile tempFiles
+                    removeTempFiles interpreter (sequenceNr state)
              )
              ( running state )
 
@@ -137,4 +240,14 @@ reset interpreter
                                 , evaluationAborted = True
                                 , running = Nothing
                                 }
+
+
+-- Sends text to currently running process.
+send :: Interpreter -> String -> IO ()
+send interpreter input
+  = do state <- varGet interpreter
+       when ( not $ evaluationAborted state && isJust (running state) )
+            ( let Just (sendF, _, _) = running state
+               in sendF input
+            )
 
