@@ -338,6 +338,11 @@ evaluate window interpreter isCompileOnly isFullCompile isIgnoreWarnings isShowE
            -- publish the notification text
            when (not (isMainModule && isWarning) && not (isWarning && ignoreWarnings state))
              $ publish text Nothing
+
+           -- add an additional new line if the error spans more than one line, so that
+           -- large error messages are separated from eachother.
+           when ((length $ lines text) > 1)
+             $ publish "\r\n" Nothing
       where
         publishLink :: (String -> Maybe InFileLink -> IO ()) -> Int -> Int -> IO ()
         publishLink pf r c
