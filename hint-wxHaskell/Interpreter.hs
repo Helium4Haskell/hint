@@ -37,6 +37,10 @@ data InterpreterState
        , ignoreWarnings        :: Bool
        , showExprType          :: Bool
        , fullCompile           :: Bool
+       , heliumPath            :: String
+       , lvmrunPath            :: String
+       , editorPath            :: String
+       , lastExecutedCommand   :: String
        }
 
 
@@ -56,8 +60,8 @@ interpreterMainModule
 
 
 -- Creates an initial interpreter.
-create :: (Interpreter -> InterpreterOutput -> IO ()) -> (Interpreter -> IO ()) -> [FilePath] -> [FilePath] -> IO Interpreter
-create onOutput onFinish libDirs binDirs
+create :: (Interpreter -> InterpreterOutput -> IO ()) -> (Interpreter -> IO ()) -> IO Interpreter
+create onOutput onFinish
   = varCreate IS { reversedPendingOutput = []
                  , compilationCompleted  = False
                  , evaluationAborted     = True
@@ -67,8 +71,8 @@ create onOutput onFinish libDirs binDirs
                  , sequenceNr            = 0
                  , dataAvailableCallback = onOutput
                  , finishCallback        = onFinish
-                 , libraryDirs           = libDirs
-                 , binaryDirs            = binDirs
+                 , libraryDirs           = []
+                 , binaryDirs            = []
                  , currentModule         = "Prelude"
                  , currentModuleName     = "Prelude"
                  , targetModule          = "Prelude"
@@ -77,6 +81,10 @@ create onOutput onFinish libDirs binDirs
                  , ignoreWarnings        = False
                  , showExprType          = False
                  , fullCompile           = True
+                 , heliumPath            = "C:\\Program Files\\Helium\\bin\\Helium.exe"
+                 , lvmrunPath            = "C:\\Program Files\\Helium\\bin\\Lvmrun.exe"
+                 , editorPath            = "C:\\Program Files\\ConTEXT.exe %f /g%c:%r"
+                 , lastExecutedCommand   = "nothing executed yet"
                  }
 
 
@@ -106,9 +114,8 @@ evaluate window interpreter isCompileOnly isFullCompile isIgnoreWarnings isShowE
                     $ removeFile binary
 
            -- create commandline for this tempfile
-           libpathString <- concatPaths (libraryDirs state') "."
-           let additionalFlags = if fullCompile state' then ["-b"] else []
-           (Right command) <- commandline "helium" (additionalFlags ++ ["-P", libpathString, tempfile]) (binaryDirs state')
+           let additionalFlags = if fullCompile state' then "-b" else ""
+           let command = heliumPath state' ++ " " ++ additionalFlags ++ " " ++ tempfile
 
            -- execute helium.
            -- interpreter will be executed when this process is finished.
@@ -119,9 +126,10 @@ evaluate window interpreter isCompileOnly isFullCompile isIgnoreWarnings isShowE
 
            -- register the process and processid so that we are able to kill
            -- the interpreter if neccesairy.
-           let state'' = state' { running     = Just (sendF, process, pid)
-                                , alreadyDead = False
-                                , tempFiles   = tempFiles state' ++ [tempfile]
+           let state'' = state' { running             = Just (sendF, process, pid)
+                                , alreadyDead         = False
+                                , tempFiles           = tempFiles state' ++ [tempfile]
+                                , lastExecutedCommand = command
                                 }
            varSet interpreter state''
 
@@ -223,8 +231,7 @@ evaluate window interpreter isCompileOnly isFullCompile isIgnoreWarnings isShowE
            state <- varGet interpreter
 
            -- create commandline for this lvm file
-           libpathString <- concatPaths (libraryDirs state) "."
-           (Right command) <- commandline "lvmrun" ["-P" ++ libpathString, lvmModule] (binaryDirs state)
+           let command = lvmrunPath state ++ " " ++ lvmModule
 
            -- execute lvmrun.
            (sendF,process,pid) <- processExecAsync window command 64

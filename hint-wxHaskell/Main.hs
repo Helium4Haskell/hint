@@ -48,16 +48,18 @@ hint
        -- initial text on console
        --
        setInitialConsoleContent c
+       set c [ rememberFutureInput := True
+             , displayPrompt       := True
+             , prompt              := "Prelude> "
+             ]
 
        --
        -- Initialize the interpreter
        --
        interpreter <- initializeInterpreter c
-       set c [ rememberFutureInput := True
-             , userInputHandler    := hintOnCommand interpreter f
-             , displayPrompt       := True
-             , prompt              := "Prelude> "
-             ]
+       set c [ userInputHandler := hintOnCommand interpreter f ]
+       
+       setCommandlinePaths c interpreter
 
        --
        -- update frame and set event handlers.
@@ -69,10 +71,10 @@ hint
              , on (menu about)   := infoDialog f "About Hint" "Hint - Helium Interpreter\nArie Middelkoop, 2004\nhttp://www.cs.uu.nl/helium\n\nReport bugs and suggestions to:\nhelium@cs.uu.nl"
              , on (menu mExit)   := do reset interpreter
                                        close f
-             , on (menu mReload) := echo c ":r" $ hintOnCommand interpreter f c (Just ":r")
+             , on (menu mReload)       := echo c ":r" $ hintOnCommand interpreter f c (Just ":r")
              , on (menu mHintCommands) := echo c ":?" $ hintOnCommand interpreter f c (Just ":?")
-             , on (menu mClearScreen) := clear c
-             , on (menu mTerminate) := reset interpreter
+             , on (menu mClearScreen)  := clear c
+             , on (menu mTerminate)    := reset interpreter
              , visible    := True
              ]
 
@@ -95,17 +97,23 @@ hint
 
     initializeInterpreter :: TextCtrlConsole -> IO Interpreter
     initializeInterpreter c
-      = do installdir <- getInstallationDirectory
-           -- let installdir = "C:\\Program Files\\Helium"
-           libdir <- pathAdd installdir "lib"
-           bindir <- pathAdd installdir "bin"
-
-           -- check writable temp directory
+      = do -- check writable temp directory
            (ok, tempDir) <- checkTempDirectoryWriteable
            when (not ok) (fail ("The temporary directory is not writeable: " ++ tempDir))
 
-           interpreter <- create (hintOnOutput c) (hintOnFinish c) [libdir] [bindir]
+           interpreter <- create (hintOnOutput c) (hintOnFinish c)
            return interpreter
+
+    setCommandlinePaths :: TextCtrlConsole -> Interpreter -> IO ()
+    setCommandlinePaths console interpreter
+      = do (heliumPath, lvmPath, editorPath) <- getCommandlineArgs
+           varUpdate interpreter (\i -> i { heliumPath = heliumPath
+                                          , lvmrunPath = lvmPath
+                                          , editorPath = editorPath
+                                          })
+           return ()
+      `catch`
+        (hintErrorHandler console False)
 
     setInitialConsoleContent :: TextCtrlConsole -> IO ()
     setInitialConsoleContent c
@@ -225,8 +233,11 @@ hintOnFinish console interpreter
 
 -- displays the io-error in an error dialog.
 hintErrorHandler :: TextCtrlConsole -> Bool -> IOError -> IO ()
-hintErrorHandler console rethrow error
+hintErrorHandler console True error
   = do errorDialog (control console) "Error" (ioeGetErrorString error)
-       when rethrow (ioError error)
+       ioError error
+       return ()
+hintErrorHandler console False error
+  = do addData console ErrorStyle Nothing ("Hint-error: " ++ (ioeGetErrorString error) ++ "\n")
        return ()
 
