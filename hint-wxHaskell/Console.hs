@@ -65,7 +65,7 @@ class Console c where
   -- | The input handler is called when the user submits his
   --   command. It is passed to the input handler as a
   --   string.
-  userInputHandler :: Attr c (c -> String -> IO ())
+  userInputHandler :: Attr c (c -> Maybe String -> IO ())
 
   -- | The console will memorise submitted commands while
   --   this attribute is set to True.

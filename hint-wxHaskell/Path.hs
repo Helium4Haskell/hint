@@ -1,5 +1,5 @@
 -- | Use this module to build commandline strings.
-module Path (commandline, getTempFilename, concatPaths, replaceSuffix, getNameOnly, pathAdd)
+module Path (commandline, getTempFilename, checkTempDirectoryWriteable, concatPaths, replaceSuffix, getNameOnly, pathAdd)
 where
 
 
@@ -42,9 +42,17 @@ commandline command parameters binaryDirectories
 -- Gets the name of a temporary file
 getTempFilename :: String -> IO FilePath
 getTempFilename name
-  = do p <- E.catch (getEnv "TEMP") (const $ return "")
+  = do p <- E.catch (getEnv "TEMP") (const $ getCurrentDirectory)
        s <- getDirectorySeparator
-       if null p then ( return (concatPath s "/tmp" name) ) else ( return (concatPath s p name) )
+       return (concatPath s p name)
+
+
+-- Checks if the temp directory is writeable
+checkTempDirectoryWriteable :: IO (Bool, String)
+checkTempDirectoryWriteable
+  = do p <- E.catch (getEnv "TEMP") (const $ getCurrentDirectory)
+       perms <- getPermissions p
+       return (writable perms, p)
 
 
 concatPaths :: [FilePath] -> FilePath -> IO String
@@ -207,8 +215,7 @@ getNameOnly :: FilePath -> IO String
 getNameOnly path
   = do sep <- getDirectorySeparator
        let paths = split sep path
-       putStrLn (show paths)
        let file  = last paths
        let parts = split '.' file
-       return $ foldr1 (\l r -> l ++ "." ++ r) (init parts)
+       return $ foldr1 (\l r -> l ++ "." ++ r) (if length parts > 1 then init parts else parts)
 

@@ -10,6 +10,7 @@ import Graphics.UI.WX
 import System.Directory
 import Path
 import qualified HeliumOutputParser as O
+import StringOps
 
 
 
@@ -28,6 +29,12 @@ data InterpreterState
        , finishCallback        :: Interpreter -> IO ()
        , libraryDirs           :: [FilePath]
        , binaryDirs            :: [FilePath]
+       , currentModule         :: String
+       , targetModule          :: String
+       , additionalModules     :: [String]
+       , compileOnly           :: Bool
+       , ignoreWarnings        :: Bool
+       , showExprType          :: Bool
        }
 
 
@@ -43,7 +50,7 @@ type InFileLink
 
 interpreterMainModule :: String
 interpreterMainModule
-  = "HintII"
+  = "HintHeliumInterface"
 
 
 -- Creates an initial interpreter.
@@ -60,22 +67,31 @@ create onOutput onFinish libDirs binDirs
                  , finishCallback        = onFinish
                  , libraryDirs           = libDirs
                  , binaryDirs            = binDirs
+                 , currentModule         = "Prelude"
+                 , targetModule          = "Prelude"
+                 , additionalModules     = []
+                 , compileOnly           = False
+                 , ignoreWarnings        = False
+                 , showExprType          = False
                  }
 
 
 -- Runs the expression
-evaluate :: Window a -> Interpreter -> String -> IO ()
-evaluate window interpreter expression
+evaluate :: Window a -> Interpreter -> Bool -> Bool -> Bool -> String -> IO ()
+evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expression
   = let tempfileName = interpreterMainModule ++ ".hs"
      in do reset interpreter  -- abort any (possibly) running operations
            state <- varGet interpreter
            let state' = state { sequenceNr        = sequenceNr state + 1
                               , evaluationAborted = False
+                              , compileOnly       = isCompileOnly
+                              , ignoreWarnings    = isIgnoreWarnings
+                              , showExprType      = isShowExprType
                               }
 
            -- build tempfile
            tempfile <- getTempFilename tempfileName
-           writeMainModule tempfile expression
+           writeMainModule tempfile expression (additionalModules state' ++ [targetModule state'])
 
            -- create commandline for this tempfile
            libpathString <- concatPaths (libraryDirs state') "."
@@ -99,9 +115,19 @@ evaluate window interpreter expression
            return ()
 
   where
-    writeMainModule :: FilePath -> String -> IO ()
-    writeMainModule path expression
-      = writeFile path ( "module "++interpreterMainModule++" where\r\ninterpreter_main = " ++ expression ++ "\r\n" )
+    -- write the main module
+    writeMainModule :: FilePath -> String -> [String] -> IO ()
+    writeMainModule path expression modules
+      = do fd <- openFile path WriteMode
+           hPutStrLn fd ("module " ++ interpreterMainModule ++ " where")
+           hPutStrLn fd ""
+           mapM_ (hPutStrLn fd . ("import " ++)) modules -- imports
+           hPutStrLn fd ""
+           hPutStrLn fd "interpreter_main ="
+           mapM_ (hPutStrLn fd . ("  " ++)) (lines expression) -- prefix multi line expressions
+           hFlush fd
+           hClose fd
+
 
     -- ensure that the compile process has been completed and execute lvmrun.
     onEndCompilerProcess :: String -> Int -> Int -> IO ()
@@ -120,13 +146,36 @@ evaluate window interpreter expression
                      -- parse the results to investigate errors
                      when ( not aborted )
                           ( do input <- pendingOutput interpreter
-                               putStrLn "Start:"
-                               putStrLn (show input)
                                let (modules, strangeOutput) = O.parseHeliumOutput input
+
+                               -- figure out the last successfully compiled module.
+                               let okCompiledModules = filter ( \m -> case (O.result m) of
+                                                                        O.FinishedOk             -> True
+                                                                        O.FinishedWithWarnings _ -> True
+                                                                        _                        -> False
+                                                              ) modules
+                               putStrLn ""
+                               putStrLn (show okCompiledModules)
+                               let lastOkCompiledModule = if null okCompiledModules
+                                                          then "Prelude"
+                                                          else if length okCompiledModules > 1
+                                                               then O.name (head $ drop 1 $ reverse okCompiledModules)
+                                                               else O.name (last okCompiledModules)
+                               onlyModuleName <- getNameOnly $ lastOkCompiledModule
+                               let currentModulePath = if onlyModuleName == interpreterMainModule
+                                                       then "Prelude"
+                                                       else lastOkCompiledModule
+                               putStrLn lastOkCompiledModule
+                               putStrLn currentModulePath
+
+
                                varSet interpreter state { reversedPendingOutput = []
                                                         , alreadyDead = True
                                                         , compilationCompleted = True
+                                                        , currentModule = currentModulePath
                                                         }
+
+
 
                                -- publish results
                                publishCompilationResults interpreter modules strangeOutput
@@ -137,7 +186,7 @@ evaluate window interpreter expression
                                                                  O.FinishedWithWarnings _ -> True
                                                                  _                        -> False
                                                        ) modules
-                               let proceedWithLVM = noInternalError && compilationOk
+                               let proceedWithLVM = noInternalError && compilationOk && not (compileOnly state)
 
                                when ( proceedWithLVM )
                                     ( executeLVM sourcefile )
@@ -162,7 +211,7 @@ evaluate window interpreter expression
            (Right command) <- commandline "lvmrun" ["-P" ++ libpathString, lvmModule] (binaryDirs state)
 
            -- execute lvmrun.
-           (sendF,process,pid) <- processExecAsync window command 32
+           (sendF,process,pid) <- processExecAsync window command 64
                                                    (onEndLvmProcess (sequenceNr state))
                                                    (\s _ -> addInterpreterOutput interpreter (sequenceNr state) False s)
                                                    (\s _ -> addInterpreterOutput interpreter (sequenceNr state) True s)
@@ -190,25 +239,53 @@ evaluate window interpreter expression
     -- output the results
     publishCompilationResults :: Interpreter -> [O.Module] -> String -> IO ()
     publishCompilationResults interpreter modules strangeOutput
-      = do -- Publish the compilation results of individual modules.
-           mapM_ (publishModule interpreter) modules
+      = do state <- varGet interpreter
+           let allOk = all ( \m -> case (O.result m) of
+                                     O.FinishedOk             -> True
+                                     O.FinishedWithWarnings _ -> True
+                                     _                        -> False
+                           ) modules
+
+           -- Publish the compilation results of individual modules.
+           mapM_ (publishModule interpreter allOk) modules
 
            -- dumps any strange output as error on the screen.
            -- strange output is the result of unexpected output
            -- from helium (possibly an internal error of some kind).
-           state <- varGet interpreter
            dataAvailableCallback state interpreter $ ErrorOutput strangeOutput Nothing
+
+           -- dump the type of the expression if required.
+           when (showExprType state)
+             $ do -- look it up first
+                  let mainModules = filter (\m -> interpreterMainModule `isSubsequenceOf` O.name m) modules
+                  let warnings = [ s
+                                 | m <- mainModules
+                                 , n <- O.notifications m
+                                 , s <- case n of
+                                          O.Warning _ s -> [s]
+                                          _             -> []
+                                 ]
+                  let linestart = "Warning: Missing type signature: interpreter_main :: "
+                  let signatures = [ drop (length linestart) l
+                                   | l <- warnings
+                                   , take (length linestart) l == linestart
+                                   ]
+                  when (not (null signatures))
+                    $ dataAvailableCallback state interpreter $ WarningOutput (expression ++ " :: " ++ head signatures) Nothing
+
+                  return ()
+
            return ()
 
     -- output the results of one module
-    publishModule :: Interpreter -> O.Module -> IO ()
-    publishModule interpreter m
+    publishModule :: Interpreter -> Bool -> O.Module -> IO ()
+    publishModule interpreter allOk m
       = do state <- varGet interpreter
            onlyModuleName <- getNameOnly $ O.name m
            let isMainModule = onlyModuleName == interpreterMainModule
            let publish = dataAvailableCallback state interpreter
            ( case (O.result m) of
-               O.FinishedOk             -> when (not isMainModule)
+               O.FinishedOk             -> when (not isMainModule && not allOk && onlyModuleName /= "Prelude")
                                              $ publish $ NormalOutput ("Compiled " ++ onlyModuleName ++ "\n")
                O.FinishedWithWarnings n -> do when (not isMainModule)
                                                 $ publish $ WarningOutput ("Compiling " ++ onlyModuleName ++ "\n") Nothing
@@ -238,18 +315,57 @@ evaluate window interpreter expression
                                                 O.Warning l s -> (l, s, True)
 
            -- publish the location of the notification
-           when (not isMainModule && null locations)
+           when (not isMainModule && null locations && not (isWarning && ignoreWarnings state))
              $ do foldl1 (\ioL ioR -> do ioL; publish ", " Nothing; ioR) (map (\(r,c) -> publishLink publish r c) locations)
                   publish ": " Nothing
 
            -- publish the notification text
-           when (not (isMainModule && isWarning))
+           when (not (isMainModule && isWarning) && not (isWarning && ignoreWarnings state))
              $ publish text Nothing
       where
         publishLink :: (String -> Maybe InFileLink -> IO ()) -> Int -> Int -> IO ()
         publishLink pf r c
           = let txt = "(" ++ show r ++ "," ++ show c ++ ")"
              in pf txt (Just (modulename, r, c))
+
+
+-- attempts to load the given module.
+loadModule :: Window a -> Interpreter -> String -> IO ()
+loadModule window interpreter mod
+  = do state <- varGet interpreter
+       when (not $ isJust $ running state)
+         $ do let state' = state { targetModule = mod }
+              varSet interpreter state'
+              evaluate window interpreter True True False "\"should not see this :)\""
+
+
+-- adds the module to the also-load-modules list.
+-- loading of this module is always attempted, unless it is unloaded.
+-- As of yet: loading of the module is not checked at load time.
+alsoLoadModule :: Interpreter -> String -> IO ()
+alsoLoadModule interpreter mod
+  = do state <- varGet interpreter
+       when (not $ isJust $ running state)
+         $ do let state' = state { additionalModules = additionalModules state ++ [mod] }
+              varSet interpreter state'
+
+
+-- unloads this module from the also-load-modules list.
+-- it does not unload the non-also-modules.
+unloadModule :: Interpreter -> String -> IO ()
+unloadModule interpreter mod
+  = do state <- varGet interpreter
+       when (not $ isJust $ running state)
+         $ do let state' = state { additionalModules = filter (/= mod) $ additionalModules state }
+              varSet interpreter state'
+
+
+-- compile the given expression to retrieve its type
+compileForType :: Window a -> Interpreter -> String -> IO ()
+compileForType window interpreter expr
+  = do state <- varGet interpreter
+       when (not $ isJust $ running state)
+         $ evaluate window interpreter True True True expr
 
 
 -- remove temporary files created while compiling.

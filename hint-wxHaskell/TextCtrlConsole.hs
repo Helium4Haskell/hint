@@ -29,7 +29,7 @@ data TextCtrlConsole
   = TCC { control                :: TextCtrl ()
         , beginUserInputRef      :: Var Int
         , linkTableRef           :: Var [Link]
-        , inputHandlerRef        :: Var (TextCtrlConsole -> String -> IO ())
+        , inputHandlerRef        :: Var (TextCtrlConsole -> Maybe String -> IO ())
         , prevInputTableRef      :: Var [String]
         , prevInputTableIndexRef :: Var Int
         , rememberInputRef       :: Var Bool
@@ -448,7 +448,7 @@ keyboardHandler console (EventKey key modifiers _)
 
                      -- Execute the command.
                      commandHandler <- varGet $ inputHandlerRef console
-                     commandHandler console command
+                     commandHandler console (Just command)
 
       -- 'Normal' keys
        -- Propagate if inside the editable area.
@@ -467,14 +467,29 @@ keyboardHandler console (EventKey key modifiers _)
                                                                         KeyChar 'c' -> True
                                                                         KeyChar 'C' -> True
                                                                         _           -> False
-                         -- Let text control handle 'Ctrl' + 'c'.
+                         -- Let text control handle 'Ctrl' + 'c' if there is a selection.
+                         -- If there is no selection, we turn it into a cancel command.
                          ifcond_ isCtrlCDown
-                           propagateEvent
+                            $ propagateEvent
 
                          -- Other combinations result into moving the carret
                          -- to the end of the control.
                          unless isCtrlCDown
                            $ textCtrlSetInsertionPointEnd textctrl
+
+       -- If there is no selection: run the terminate command on Ctrl + C
+       let isCtrlCDown = modifiers == justControl && case key of
+                                                      KeyChar 'c' -> True
+                                                      KeyChar 'C' -> True
+                                                      _           -> False
+       ifcond_ isCtrlCDown
+         $ do sel <- getSelection textctrl
+              let hasSelection = pointX sel /= pointY sel
+              ifcond_ hasSelection
+                $ propagateEvent
+              ifcond_ (not hasSelection)
+                $ do commandHandler <- varGet $ inputHandlerRef console
+                     commandHandler console Nothing
 
        -- Other keys are not ignored.
        return ()
