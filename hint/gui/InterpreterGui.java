@@ -350,7 +350,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 
         public void actionPerformed(ActionEvent event)
         {
-            try { new BrowserProcess("http://www.cs.uu.nl/~afie/helium/docs/HintUserManual.html"); }
+            try { new BrowserProcess("http://www.cs.uu.nl/helium/docs/HintUserManual.html"); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
     }
@@ -384,7 +384,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 
         public void actionPerformed(ActionEvent event)
         {
-            try { new BrowserProcess("http://www.cs.uu.nl/~afie/helium/"); }
+            try { new BrowserProcess("http://www.cs.uu.nl/helium/"); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
     }
@@ -420,7 +420,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             JOptionPane.showMessageDialog( InterpreterGui.this
                                          , "Hint - Helium Interpreter"
                                            + "\nArie Middelkoop, 2003"
-                                           + "\nhttp://www.cs.uu.nl/~afie/helium/"
+                                           + "\nhttp://www.cs.uu.nl/helium/"
                                            + "\n"
                                            + "\nReport bugs and suggestions to:"
                                            + "\n  helium@cs.uu.nl"
@@ -472,7 +472,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             if (functionname.equals("*"))
                 functionname = "mul";
 
-            try { new BrowserProcess("http://www.cs.uu.nl/~afie/helium/docs/TourOfPrelude.html#"+functionname); }
+            try { new BrowserProcess("http://www.cs.uu.nl/helium/docs/TourOfPrelude.html#"+functionname); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
 
