@@ -497,7 +497,7 @@ abstract public class AbstractInterpreterGui extends JFrame
 
         protected void displayErrorMessage(String message)
         {
-            JOptionPane.showMessageDialog(AbstractInterpreterGui.this, message, "Command error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(AbstractInterpreterGui.this.inputPane, message, "Command error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

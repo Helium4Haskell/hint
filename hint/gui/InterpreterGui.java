@@ -857,7 +857,7 @@ public class InterpreterGui extends AbstractInterpreterGui
                 if (target.exists())
                 {
                     try { new EditorProcess(target, location.getRow(), location.getCol()); }
-                    catch(IOException e) { JOptionPane.showConfirmDialog(null, "Failed to run the editor, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
+                    catch(IOException e) { JOptionPane.showMessageDialog(null, "Failed to run the editor, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
                 }
             }
         }
