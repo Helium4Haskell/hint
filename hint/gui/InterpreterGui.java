@@ -75,6 +75,28 @@ public class InterpreterGui extends AbstractInterpreterGui
         }
 
 
+		String moduleNameError(String fileName)
+		{
+			// isUpper . head
+			char firstChar = fileName.charAt(0);
+			if (!(firstChar >= 'A' && firstChar <= 'Z')) 
+			{
+				return "File name must start with upper-case letter";
+		    }
+		    // all isAlphaNum
+			for (int i = 0; i < fileName.length(); i++) 
+			{
+				char c = fileName.charAt(i);
+				if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '.')
+					;
+				else
+					return "File name may contain only letters, digits and dots";
+			}
+			if (!fileName.endsWith(".hs"))
+				return "File name must end in \".hs\"";
+			return null;
+		}
+		
         public void actionPerformed(ActionEvent event)
         {
             FileDialog dialog = new FileDialog(InterpreterGui.this, "Open Helium module", FileDialog.LOAD);
@@ -82,6 +104,14 @@ public class InterpreterGui extends AbstractInterpreterGui
             dialog.show();
             if (dialog.getFile() != null && dialog.getDirectory() != null)
             {
+            	String fileName = dialog.getFile();
+				String error = moduleNameError(fileName);
+				if (error != null) 
+				{
+					getOutputPane().addText("\n" + error + "\n", InterpreterTextPane.TYPE_ERROR);
+					drawPrompt();
+					return;
+				}
                 File heliumModule = new File(dialog.getDirectory(), dialog.getFile());
                 getController().performCommand(":l "+heliumModule.getPath());
             }

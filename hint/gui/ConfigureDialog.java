@@ -31,6 +31,11 @@ public class ConfigureDialog extends JDialog
         layoutConstraints = new GridBagConstraints();
         settingsPane.setLayout(layout);
 
+		JTextField lvmPath  = new JTextField(ProcessEnvironment.getEnvironment().getLVMEnvironmentSetting(), 30);
+		JTextField tempPath = new JTextField(ProcessEnvironment.getEnvironment().getTempPath().getAbsolutePath(), 30);
+		JTextField path     = new JTextField(ProcessEnvironment.getEnvironment().getPathEnvironmentSetting(), 30);
+		lvmPath.setEditable(false); tempPath.setEditable(false); path.setEditable(false); 	
+
         editorCommandline  = new JTextField(ProcessEnvironment.getEnvironment().getEditorCommandlineTemplate(),  30);
         browserCommandline = new JTextField(ProcessEnvironment.getEnvironment().getBrowserCommandlineTemplate(), 30);
         additionalOptions  = new JTextField(ProcessEnvironment.getEnvironment().getAdditionalHeliumParameters(), 30);
@@ -42,6 +47,9 @@ public class ConfigureDialog extends JDialog
         add(" Browser commandline: ", browserCommandline);
         add(" Additional helium options: ", additionalOptions);
         add(" Font size: ", fontSize);
+        add(" LVMPATH: ", lvmPath);
+        add(" TEMP: ", tempPath);
+        add(" PATH: ", path);
 
         JButton ok = new JButton("OK");
         ok.addActionListener(new OkListener());

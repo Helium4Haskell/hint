@@ -78,7 +78,7 @@ public class Commandline
             File commandWithExtension = new File(dir, commandName + EXTENSION);
             if (commandWithExtension.exists())
                 return commandWithExtension.getPath();
-
+			// !!! gevaarlijk omdat ie ook paden vindt zo (c:\apps\helium als c:\apps in je pad zit)
             File commandWithoutExtension = new File(dir, commandName);
             if (commandWithoutExtension.exists())
                 return commandWithoutExtension.getPath();

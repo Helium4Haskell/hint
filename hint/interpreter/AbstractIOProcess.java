@@ -107,6 +107,11 @@ abstract public class AbstractIOProcess
 
     protected void execute(Commandline commandline) throws IOException
     {
+/*    	System.out.println("cmd = ");
+    	String[] a = commandline.toCommandArray();
+    	for (int i = 0; i < a.length; i++)
+    		System.out.println(a[i]);*/
+    		
         externalProcess = Runtime.getRuntime().exec(commandline.toCommandArray(), ProcessEnvironment.getEnvironment().getEnvironmentSettings(), commandline.getWorkingDirectory());
         shutdownHook    = new ShutdownHook(externalProcess);
 

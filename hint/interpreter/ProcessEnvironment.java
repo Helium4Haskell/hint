@@ -114,6 +114,7 @@ public class ProcessEnvironment
         if (envPath == null)
             envPath = System.getProperty("java.library.path");
 
+		// System.out.println("PATH = " + envPath);
         return envPath;
     }
 
