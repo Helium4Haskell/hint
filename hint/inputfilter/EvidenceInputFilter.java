@@ -24,6 +24,7 @@ public class EvidenceInputFilter extends AbstractInputFilter
     private boolean    inCompileBlock;
     private LinkedList compileBlockBuffer;
     private boolean    removeMinorWarnings;
+    private boolean    internalError;
 
 
     public EvidenceInputFilter(InputObserver delegate, boolean removeMinorWarnings)
@@ -34,11 +35,19 @@ public class EvidenceInputFilter extends AbstractInputFilter
         this.inCompileBlock            = false;
         this.compileBlockBuffer        = new LinkedList();
         this.removeMinorWarnings       = removeMinorWarnings;
+        this.internalError             = false;
     }
 
 
     public synchronized void errorRecieved(String data)
     {
+		if (data.indexOf("INTERNAL ERROR") >=0 || internalError)
+		{
+            super.errorRecieved(data);
+            internalError = true;
+            return;
+		}
+		
         if (data.startsWith("Parse error") && data.indexOf(HeliumProcess.HELIUM_INPUT_MODULE) != -1)
         {
             super.errorRecieved("Parse error:\n");

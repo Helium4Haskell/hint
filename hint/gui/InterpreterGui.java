@@ -648,7 +648,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 
             if (!modulePath.exists())
             {
-                displayErrorMessage("Module does not exists: "+modulePath.getAbsolutePath());
+                displayErrorMessage("Module does not exist: "+modulePath.getAbsolutePath());
                 return;
             }
 

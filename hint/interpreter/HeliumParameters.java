@@ -43,7 +43,7 @@ public class HeliumParameters
         if (file == null)
             throw new IllegalArgumentException("null module not allowed");
         if (!file.exists())
-            throw new IllegalArgumentException("module doesn\'t exists: "+file.getPath());
+            throw new IllegalArgumentException("module doesn\'t exist: "+file.getPath());
 
         module = file;
     }
