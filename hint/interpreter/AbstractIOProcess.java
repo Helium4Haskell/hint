@@ -220,6 +220,7 @@ abstract public class AbstractIOProcess
                 }
             }
             catch(IOException e) { Log.getLogger().throwing(getClass().getName(), "run", e); }
+            catch(NullPointerException e) { /* if process has been interrupted */ }
 
             if (c == -1 && readCarriageReturn)
                 buffer.append('\n');
