@@ -427,19 +427,21 @@ keyboardHandler console (EventKey key modifiers _)
        ifcond_ (isDown [KeyReturn] ["Enter"])
          $ do textCtrlSetInsertionPointEnd textctrl
               command <- getCurrentUserInput console
-              ifcond_ (not $ null command)
-                $ do -- Since we handle the newline ourself, we have to
-                     -- add the newline. And also add another prompt.
-                     textCtrlAppendText textctrl "\r\n"
-                     ifcond (get console displayPrompt)
-                       $ do prompt <- get console prompt
-                            textCtrlAppendText textctrl prompt
 
-                     -- Update the administration of the editable area and
-                     -- add the command to the previous command list.
-                     lastInputPos <- textCtrlGetLastPosition textctrl
-                     varSet (beginUserInputRef console) lastInputPos
-                     ifcond (get console rememberFutureInput)
+              -- Since we handle the newline ourself, we have to
+              -- add the newline. And also add another prompt.
+              textCtrlAppendText textctrl "\r\n"
+              ifcond (get console displayPrompt)
+                $ do prompt <- get console prompt
+                     textCtrlAppendText textctrl prompt
+              
+              -- Update the administration of the editable area and
+              -- add the command to the previous command list.
+              lastInputPos <- textCtrlGetLastPosition textctrl
+              varSet (beginUserInputRef console) lastInputPos
+
+              ifcond_ (not $ null command)
+                $ do ifcond (get console rememberFutureInput)
                        $ varUpdate (prevInputTableRef console) (command :)
                      varSet (prevInputTableIndexRef console) (-1)
 
