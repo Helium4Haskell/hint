@@ -81,9 +81,9 @@ create onOutput onFinish
                  , ignoreWarnings        = False
                  , showExprType          = False
                  , fullCompile           = True
-                 , heliumPath            = "C:\\Program Files\\Helium\\bin\\Helium.exe"
-                 , lvmrunPath            = "C:\\Program Files\\Helium\\bin\\Lvmrun.exe"
-                 , editorPath            = "C:\\Program Files\\ConTEXT.exe %f /g%c:%r"
+                 , heliumPath            = "\"C:\\Program Files\\Helium\\bin\\Helium.exe\" -P \".;C:\\Program Files\\Helium\\lib\""
+                 , lvmrunPath            = "\"C:\\Program Files\\Helium\\bin\\Lvmrun.exe\" -P \".;C:\\Program Files\\Helium\\lib\""
+                 , editorPath            = "\"C:\\Program Files\\ConTEXt\\ConTEXT.exe\" %f /g%c:%r"
                  , lastExecutedCommand   = "nothing executed yet"
                  }
 

@@ -9,6 +9,7 @@ import System.IO.Error
 import CommandlineOpts
 import Interpreter
 import Path
+import System
 import System.Environment
 import TextCtrlConsole
 import StringOps
@@ -210,10 +211,32 @@ hintOnOutput console interpreter output
     -- action to perform once the user clicks on a link
     onClick :: String -> Int -> Int -> IO ()
     onClick modulename row column
-      = do putStrLn "Performing click command - NOT YET"
+      = do state <- varGet interpreter
+           let commandline = constructEditorCommandline (editorPath state) modulename row column
+           putStrLn ("Executing: " ++ commandline)
+           system commandline
            return ()
       `catch`
         (hintErrorHandler console True)
+
+    constructEditorCommandline :: String -> String -> Int -> Int -> String
+    constructEditorCommandline template modulePath row column
+      = expandTemplate template
+      where
+        expandTemplate :: String -> String
+        expandTemplate s
+          = let (l, r) = break (== '%') s
+             in if length r <= 1
+                then l ++ r
+                else let (_:x:xs)  = r
+                         expansion = case x of
+                                       '%' -> "%"
+                                       'f' -> modulePath
+                                       'r' -> show row
+                                       'c' -> show column
+                                       c   -> [c]
+                      in l ++ expansion ++ expandTemplate xs
+
 
 
 -- called when the interpreter has finished executing the command.
