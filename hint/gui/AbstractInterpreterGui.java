@@ -164,7 +164,7 @@ abstract public class AbstractInterpreterGui extends JFrame
         JToolBar toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.setOrientation(JToolBar.HORIZONTAL);
-        toolbar.setFocusable(false);
+        toolbar.setRequestFocusEnabled(false);
 
         addToolbarActions(toolbar, fileActions);
         toolbar.addSeparator(new Dimension(10, 1));
@@ -316,7 +316,7 @@ abstract public class AbstractInterpreterGui extends JFrame
         {
             Action  action = (Action) iterator.next();
             JButton button = toolbar.add(action);
-            button.setFocusable(false);
+            button.setRequestFocusEnabled(false);
             button.setMargin(new Insets(1, 1, 1, 1));
         }
     }
