@@ -5,6 +5,7 @@
 --   has not been submitted yet.
 --   Output: the other text. This is mainly tekst programmatically
 --   added to control, but also previously submitted input.
+
 module TextCtrlConsole ( module Console
                        , TextCtrlConsole
                        , textCtrlConsole
@@ -42,7 +43,9 @@ data TextCtrlConsole
         }
 
 
+
 instance Console TextCtrlConsole where
+
   -- | Adds the data to the console. If a link is supplied, it is
   --   added to the link-table together with its position on the
   --   console.
@@ -52,12 +55,14 @@ instance Console TextCtrlConsole where
            $ varUpdate (linkTableRef console)
                        (Link l r (do (fromJust mLink); return ()) :)
 
+
   -- | Creates the input handler attribute.
   userInputHandler
     = newAttr "ConsoleInputHandler"
               (varGet . inputHandlerRef)
               (varSet . inputHandlerRef)
-  
+
+
   -- | Clears the console. All output is removed, but prompt and
   --   current user-input is preserved. After clearing, the prompt
   --   will be visible.
@@ -82,15 +87,18 @@ instance Console TextCtrlConsole where
 
          return ()
 
+
   -- | Transfers the focus to the text control.
   setFocus
     = windowSetFocus . control
+
 
   -- | Creates the remember future input attribute.
   rememberFutureInput
     = newAttr "ConsoleRememberFutureInput"
               (varGet . rememberInputRef)
               (varSet . rememberInputRef)
+
 
   -- | Sets the fontsize and updates the attributes.
   fontsSize
@@ -110,9 +118,11 @@ instance Console TextCtrlConsole where
                           ]
                 )
 
+
   -- | Sets the prompt.
   --   The prompt is first removed, then changed and if it was
   --   visible, added again.
+
   prompt
     = newAttr "ConsolePrompt"
               (varGet . promptRef)
@@ -122,6 +132,7 @@ instance Console TextCtrlConsole where
                      varSet (promptRef console) prompt
                      set console [ displayPrompt := isDisplaying ]
               )
+
 
   -- | Sets the visibility of the prompt.
   --   If True and the prompt was not visible, it is added.
@@ -135,15 +146,18 @@ instance Console TextCtrlConsole where
                                    $ appendData console InputStyle "" $ Just isDisplaying
         )
 
+
   -- | Get the layout of the control. Use this to layout the console according to
   --   Graphics.UI.WXCore.Layout.
   getLayout
     = widget . control
 
+
   -- | Get the links inside this component.
   linkTable
     = readAttr "ConsoleLinks"
                (varGet . linkTableRef)
+
 
 
 -- | Appends text in the given style to the console. The text may be empty.
@@ -156,6 +170,7 @@ instance Console TextCtrlConsole where
 --   area occupied by the appended text on the console. That is: the
 --   position that contains the first character and the position next to
 --   the last character.
+
 appendData :: TextCtrlConsole -> DataStyle -> String -> Maybe Bool -> IO (Int, Int)
 appendData console style text maybeOverrideRemovePrompt
   = do let textctrl = control console
@@ -319,6 +334,7 @@ keyboardHandler console (EventKey key modifiers _)
                      index <- varGet $ prevInputTableIndexRef console
                      let index'  = if isDown [KeyDown] ["Down"] then index - 1 else index + 1
                      let index'' = max 0 $ min index' $ length table - 1
+
                      varSet (prevInputTableIndexRef console) index''
 
                      -- Replace the current command with the one pointed to by the index (if it exists)
@@ -339,7 +355,8 @@ keyboardHandler console (EventKey key modifiers _)
                 propagateEvent
 
 
-       -- Backspace
+
+      -- Backspace
        -- If backspace is pressed and backspace would replace text in the editable
        -- area, then the event is handled by the control.
        ifcond_ (isDown [KeyBack] ["Backspace"])
@@ -353,7 +370,7 @@ keyboardHandler console (EventKey key modifiers _)
        ifcond_ (isDown [KeyDelete] ["Delete"])
          $ ifcond isInsideEditableArea
              $ ifncond isAtEndOfEditableArea
-                 propagateEvent
+                propagateEvent
 
        -- Home
        -- If home key is pressed, jump to the begin of the editable area.
@@ -362,14 +379,14 @@ keyboardHandler console (EventKey key modifiers _)
                 $ do beginUserInputPos <- varGet $ beginUserInputRef console
                      currentCarretPos  <- textCtrlGetInsertionPoint textctrl
                      sel               <- getSelection textctrl
-                     
+
                      -- Jump to the beginning of the editable area.
                      textCtrlSetInsertionPoint textctrl beginUserInputPos
-                     
+
                      -- Update a possible selection.
                      let hasSelection = pointX sel /= pointY sel
                      ifcond_ (hasSelection && modifiers == justShift)
-                       $ textCtrlSetSelection textctrl (minimum [beginUserInputPos, pointX sel, pointY sel])
+                      $ textCtrlSetSelection textctrl (minimum [beginUserInputPos, pointX sel, pointY sel])
                                                        (maximum [pointX sel, pointY sel])
                      ifcond_ (hasSelection && modifiers /= justShift)
                        $ textCtrlSetSelection textctrl beginUserInputPos beginUserInputPos
@@ -387,10 +404,10 @@ keyboardHandler console (EventKey key modifiers _)
                 $ do lastPos          <- textCtrlGetLastPosition textctrl
                      currentCarretPos <- textCtrlGetInsertionPoint textctrl
                      sel              <- getSelection textctrl
-                     
+
                      -- Jump to the end of the editable area.
                      textCtrlSetInsertionPointEnd textctrl
-                     
+
                      -- Update a possible selection.
                      let hasSelection = pointX sel /= pointY sel
                      ifcond_ (hasSelection)
@@ -401,7 +418,7 @@ keyboardHandler console (EventKey key modifiers _)
                      ifcond_ (modifiers == justShift)
                        $ textCtrlSetSelection textctrl currentCarretPos lastPos
 
-              -- Not inside editable area: let end behave normally.
+             -- Not inside editable area: let end behave normally.
               ifncond isInsideEditableArea
                 propagateEvent
 
@@ -417,7 +434,7 @@ keyboardHandler console (EventKey key modifiers _)
                      ifcond (get console displayPrompt)
                        $ do prompt <- get console prompt
                             textCtrlAppendText textctrl prompt
-                     
+
                      -- Update the administration of the editable area and
                      -- add the command to the previous command list.
                      lastInputPos <- textCtrlGetLastPosition textctrl
@@ -432,8 +449,8 @@ keyboardHandler console (EventKey key modifiers _)
                      -- Execute the command.
                      commandHandler <- varGet $ inputHandlerRef console
                      commandHandler console command
-       
-       -- 'Normal' keys
+
+      -- 'Normal' keys
        -- Propagate if inside the editable area.
        -- Restriction: unless a dangerous selection is made, that is
        -- a selection outside the editable area. Processing the key
@@ -546,14 +563,14 @@ mouseHandler :: TextCtrlConsole -> EventMouse -> IO ()
 mouseHandler console (MouseLeftUp _ _)
   = do let textctrl = control console
 
-       -- Position the carret to the possible link.
+      -- Position the carret to the possible link.
        propagateEvent
 
        selection <- getSelection textctrl
        unless (pointX selection /= pointY selection)
          $ do currentInputPos <- textCtrlGetInsertionPoint $ textctrl
               linkTable       <- get console linkTable
-              
+
               -- Execute the actions of possibly clicked links.
               let actions = [a | (Link l r a) <- linkTable, l <= currentInputPos, currentInputPos < r]
               sequence_ actions

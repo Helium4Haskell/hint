@@ -27,11 +27,11 @@ data InterpreterState
        , binaryDirs            :: [FilePath]
        }
 
+
 data InterpreterOutput
   = NormalOutput String
   | WarningOutput String
   | ErrorOutput String
-
 
 
 -- Creates an initial interpreter.
@@ -75,6 +75,7 @@ evaluate window interpreter expression
            -- register lvmrun for evaluation.
 
            return ()
+
   where
     writeMainModule :: FilePath -> String -> IO ()
     writeMainModule path expression
@@ -131,6 +132,7 @@ reset interpreter
                     mapM_ removeFile tempFiles
              )
              ( running state )
+
        varSet interpreter state { compilationCompleted = False
                                 , evaluationAborted = True
                                 , running = Nothing
