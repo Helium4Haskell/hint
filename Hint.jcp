@@ -1,0 +1,82 @@
+! ** JCreator Project File (C)2000
+! ********** DO NOT EDIT *********
+
+VERSION := "1.10"
+LABEL := "Hint"
+JDKPROFILE := "j2sdk1.4.1"
+ACTIVE := "1"
+OUTPUTPATH := "\\release"
+COMPILER := "<Default>"
+
+! Start RunTime Configuration Structure
+#[BeginRunTime]LABEL := "<Default>" RUNAPPLIC := "<Default>" RUNAPPLET := "<Default>" PARAM := "" RUN := "hint.HintUU" CHECK := "10" #[EndRunTime]
+! Start Required Libraries Structure
+
+! Start Project Folder Structure
+#[BeginFolder]
+LABEL := "Root"
+FILTER := ""
+
+#[BeginFolder]
+LABEL := "hint"
+FILTER := "*.java;"
+
+#[BeginFile]SOURCE := "hint\\Hint.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\HintUU.java" #[EndFile]
+#[BeginFolder]
+LABEL := "util"
+FILTER := "*.java;"
+
+#[BeginFile]SOURCE := "\\hint\\util\\Log.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\util\\Dir.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\util\\ExtentionFilenameFilter.java" #[EndFile]
+#[EndFolder]
+#[BeginFolder]
+LABEL := "inputfilter"
+FILTER := "*.java;"
+
+#[BeginFile]SOURCE := "\\hint\\inputfilter\\RedirectInputFilter.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\inputfilter\\LineBufferInputFilter.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\inputfilter\\KeepMaintypeFilter.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\inputfilter\\EvidenceInputFilter.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\inputfilter\\AbstractInputFilter.java" #[EndFile]
+#[EndFolder]
+#[BeginFolder]
+LABEL := "interpreter"
+FILTER := "*.java;"
+
+#[BeginFile]SOURCE := "\\hint\\interpreter\\InterpreterAdapter.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\UUHeliumEnvironment.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\ProcessEnvironment.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\MessageBroadcaster.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\LVMProcess.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\InterpreterObserver.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\Interpreter.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\InputObserver.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\HeliumProcess.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\HeliumParameters.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\Commandline.java" #[EndFile]
+#[BeginFile]SOURCE := "\\hint\\interpreter\\AbstractIOProcess.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\interpreter\\EditorProcess.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\interpreter\\BrowserProcess.java" #[EndFile]
+#[EndFolder]
+#[BeginFolder]
+LABEL := "gui"
+FILTER := "*.java;"
+
+#[BeginFile]SOURCE := "\\hint\\gui\\InterpreterTextPane.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\gui\\AbstractInterpreterGui.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\gui\\Prompt.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\gui\\InterpreterGui.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\gui\\TextPopupMenu.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\gui\\WebpageFrame.java" #[EndFile]
+#[BeginFile]SOURCE := "hint\\gui\\ConfigureDialog.java" #[EndFile]
+#[BeginFolder]
+LABEL := "icon"
+FILTER := "*.java;"
+
+#[BeginFile]SOURCE := "hint\\gui\\icon\\HintIcon.java" #[EndFile]
+#[EndFolder]
+#[EndFolder]
+#[EndFolder]
+#[EndFolder]
