@@ -41,13 +41,14 @@ public class EvidenceInputFilter extends AbstractInputFilter
 
     public synchronized void errorRecieved(String data)
     {
-		if (data.indexOf("INTERNAL ERROR") >=0 || internalError)
-		{
+        if (data.indexOf("INTERNAL ERROR") >=0 || internalError)
+		    {
+			      delegateBuffer();
             super.errorRecieved(data);
             internalError = true;
             return;
-		}
-		
+		    }
+
         if (data.startsWith("Parse error") && data.indexOf(HeliumProcess.HELIUM_INPUT_MODULE) != -1)
         {
             super.errorRecieved("Parse error:\n");
