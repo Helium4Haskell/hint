@@ -1,5 +1,5 @@
 -- | Use this module to build commandline strings.
-module Commandline (commandline)
+module Path (commandline, getTempFilename, concatPaths)
 where
 
 
@@ -36,6 +36,20 @@ commandline command parameters binaryDirectories
                                    , "\""
                                    , concatMap (\param -> concat [" \"", escape isWinOS param, "\""]) parameters
                                    ]
+
+
+-- Gets the name of a temporary file
+getTempFilename :: String -> IO FilePath
+getTempFilename name
+  = do p <- E.catch (getEnv "TEMP") (const $ return "")
+       s <- getDirectorySeparator
+       if null p then ( return (concatPath s "/tmp" name) ) else ( return (concatPath s p name) )
+
+
+concatPaths :: [FilePath] -> FilePath -> IO String
+concatPaths paths initial
+  = do sep <- getPathSeparator
+       return $ foldl (\parent current -> concat [parent, [sep], current]) initial paths
 
 
 -- | Split a list on a token.
