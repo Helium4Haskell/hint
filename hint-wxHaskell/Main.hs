@@ -26,41 +26,85 @@ hint :: IO ()
 hint
   = do f <- frame [text := "Hint", visible := False ]
        c <- textCtrlConsole f
+
+       --
+       -- menubar
+       --
+       mFile <- menuPane [text:= "&File"]
+       mOpen <- menuItem mFile [text := "&Open module...", help := "Open a helium module."]
+       mReload <- menuItem mFile [text := "&Reload module", help := "Reload the current helium module."]
+       menuLine mFile
+       mExit <- menuItem mFile [text := "&Exit", help := "Exit Hint - Have a Nice day"]
+       
+       mInterpreter <- menuPane [text := "&Interpreter"]
+       mClearScreen <- menuItem mInterpreter [text := "&Clear console", help := "Clears the console."]
+       mTerminate   <- menuItem mInterpreter [text := "&Terminate program", help := "Terminate program."]
+
+       mHelp <- menuHelp []
+       mHintCommands <- menuItem mHelp [text := "&Interpreter commands"]
+       about <- menuAbout mHelp [help := "About Hint"]
+
+       --
+       -- initial text on console
+       --
+       setInitialConsoleContent c
+
+       --
+       -- Initialize the interpreter
+       --
+       interpreter <- initializeInterpreter c
+       set c [ rememberFutureInput := True
+             , userInputHandler    := hintOnCommand interpreter f
+             , displayPrompt       := True
+             , prompt              := "Prelude> "
+             ]
+
+       --
+       -- update frame and set event handlers.
+       --
        set f [ layout     := fill $ getLayout c
-             , clientSize := size 600 400
+             , clientSize := sz 600 400
+             , menubar    := [mFile, mInterpreter, mHelp]
+             , on (menu mOpen)   := onOpen interpreter f c
+             , on (menu about)   := infoDialog f "About Hint" "Hint - Helium Interpreter\nArie Middelkoop, 2004\nhttp://www.cs.uu.nl/helium\n\nReport bugs and suggestions to:\nhelium@cs.uu.nl"
+             , on (menu mExit)   := do reset interpreter
+                                       close f
+             , on (menu mReload) := hintOnCommand interpreter f c (Just ":r")
+             , on (menu mHintCommands) := hintOnCommand interpreter f c (Just ":?")
+             , on (menu mClearScreen) := clear c
+             , on (menu mTerminate) := reset interpreter
              , visible    := True
              ]
-       initHintConsole c f
+
+       hintOnFinish c interpreter
        setFocus c
+  where
+    onOpen interpreter f c
+      = do -- changes working directory
+           mbfname <- fileOpenDialog f True True "Open module" [("Helium module", ["*.hs"])] "" ""
+           case mbfname of
+             Nothing    -> return ()
+             Just fname -> do name <- getNameOnly fname
+                              hintOnCommand interpreter f c (Just (":l " ++ name))
 
+    initializeInterpreter :: TextCtrlConsole -> IO Interpreter
+    initializeInterpreter c
+      = do installdir <- getInstallationDirectory
+           -- let installdir = "C:\\Program Files\\Helium"
+           libdir <- pathAdd installdir "lib"
+           bindir <- pathAdd installdir "bin"
 
+           -- check writable temp directory
+           (ok, tempDir) <- checkTempDirectoryWriteable
+           when (not ok) (fail ("The temporary directory is not writeable: " ++ tempDir))
 
--- initialise the helium console. Sets the initial text, adds event handlers.
-initHintConsole :: Closeable frame => TextCtrlConsole -> frame -> IO ()
-initHintConsole console frame
-  = do clear console
-       addData console SpecialStyle Nothing "Welcome to Hint, the interactive shell to Helium.\n\n"
+           interpreter <- create (hintOnOutput c) (hintOnFinish c) [libdir] [bindir]
+           return interpreter
 
-       installdir <- getInstallationDirectory
-       -- let installdir = "C:\\Program Files\\Helium"
-       libdir <- pathAdd installdir "lib"
-       bindir <- pathAdd installdir "bin"
-
-       -- check writable temp directory
-       (ok, tempDir) <- checkTempDirectoryWriteable
-       when (not ok) (fail ("The temporary directory is not writeable: " ++ tempDir))
-
-       interpreter <- create (hintOnOutput console) (hintOnFinish console) [libdir] [bindir]
-
-       set console [ rememberFutureInput := True
-                   , userInputHandler    := hintOnCommand interpreter frame
-                   , displayPrompt       := True
-                   , prompt              := "Prelude> "
-                   ]
-
-       hintOnFinish console interpreter
-  `catch`
-    (hintErrorHandler console True)
+    setInitialConsoleContent :: TextCtrlConsole -> IO ()
+    setInitialConsoleContent c
+      = do clear c
+           addData c SpecialStyle Nothing "Welcome to Hint, the interactive shell to Helium.\n\n"
 
 
 -- executes the hint command entered by the user.
@@ -106,6 +150,12 @@ hintOnCommand interpreter frame console (Just command)
                        , displayPrompt       := False
                        ]
            loadModule (control console) interpreter "Prelude"
+    performCommand (["r"])
+      = do set console [ rememberFutureInput := False
+                       , displayPrompt       := False
+                       ]
+           state <- varGet interpreter
+           loadModule (control console) interpreter (targetModule state)
     performCommand ("a" : mod@(_:_))
       = alsoLoadModule interpreter (unwords mod)
     performCommand ("u" : mod@(_:_))
@@ -115,12 +165,15 @@ hintOnCommand interpreter frame console (Just command)
            close frame
     performCommand (["?"])
       = addData console SpecialStyle Nothing
-      $  ":?               this text\n"
+      $  "\n"
+      ++ ":?               this text\n"
       ++ ":l [modulename]  (re)loads this module\n"
+      ++ ":r               reloads the module\n"
       ++ ":a <modulename>  additionally loads this module\n"
       ++ ":u <modulename>  unload this additional loaded module\n"
       ++ ":t <expression>  infer type of expression\n"
       ++ ":q               quit hint\n"
+      ++ "\n"
     performCommand _
       = addData console ErrorStyle Nothing "Unkown command. Use :? to see a list of console commands.\n"
 

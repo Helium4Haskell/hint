@@ -72,7 +72,8 @@ pModule
     pUncompiledModule :: Parser Module
     pUncompiledModule
       = do name <- pStartCompiling
-           scope <- pScope
+           -- scope <- pScope
+           let scope = []
            spaces
            notifications <- many $ try $ do notification <- pNotification
                                             spaces

@@ -127,6 +127,13 @@ evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expres
            mapM_ (hPutStrLn fd . ("  " ++)) (lines expression) -- prefix multi line expressions
            hFlush fd
            hClose fd
+    
+    escape :: String -> String
+    escape str
+      = "\"" ++ concatMap (\c -> case c of
+                                   '\\' -> "\\\\"
+                                   x    -> [x]
+                          ) str ++ "\""
 
 
     -- ensure that the compile process has been completed and execute lvmrun.
@@ -154,8 +161,6 @@ evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expres
                                                                         O.FinishedWithWarnings _ -> True
                                                                         _                        -> False
                                                               ) modules
-                               putStrLn ""
-                               putStrLn (show okCompiledModules)
                                let lastOkCompiledModule = if null okCompiledModules
                                                           then "Prelude"
                                                           else if length okCompiledModules > 1
@@ -165,9 +170,6 @@ evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expres
                                let currentModulePath = if onlyModuleName == interpreterMainModule
                                                        then "Prelude"
                                                        else lastOkCompiledModule
-                               putStrLn lastOkCompiledModule
-                               putStrLn currentModulePath
-
 
                                varSet interpreter state { reversedPendingOutput = []
                                                         , alreadyDead = True

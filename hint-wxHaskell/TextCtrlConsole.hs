@@ -267,7 +267,7 @@ textCtrlConsole parentWnd
        linkStyleRef    <- varCreate linkStyle
 
        -- Create the text control.
-       textctrl <- textCtrlRich parentWnd WrapLine []
+       textctrl <- textCtrlRich parentWnd [fullRepaintOnResize := False]
        let console = TCC textctrl beginUserInputRef linkTableRef inputHandlerRef
                          prevInputTableRef prevInputTableIndexRef
                          rememberInputRef promptRef displayPromptRef
