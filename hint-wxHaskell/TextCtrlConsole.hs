@@ -7,7 +7,7 @@
 --   added to control, but also previously submitted input.
 
 module TextCtrlConsole ( module Console
-                       , TextCtrlConsole
+                       , TextCtrlConsole (control)
                        , textCtrlConsole
                        )
 where

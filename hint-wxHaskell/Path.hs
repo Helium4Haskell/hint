@@ -1,5 +1,5 @@
 -- | Use this module to build commandline strings.
-module Path (commandline, getTempFilename, concatPaths, replaceSuffix)
+module Path (commandline, getTempFilename, concatPaths, replaceSuffix, getNameOnly)
 where
 
 
@@ -193,4 +193,15 @@ isWindowsOS
 replaceSuffix :: String -> String -> String -> String
 replaceSuffix orig replacement
   = (++ replacement) . reverse . drop (length orig) . reverse
+
+
+-- | strips the path from the file, such that only the filename remains.
+getNameOnly :: FilePath -> IO String
+getNameOnly path
+  = do sep <- getDirectorySeparator
+       let paths = split sep path
+       putStrLn (show paths)
+       let file  = last paths
+       let parts = split '.' file
+       return $ foldr1 (\l r -> l ++ "." ++ r) (init parts)
 
