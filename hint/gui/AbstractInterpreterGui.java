@@ -54,7 +54,7 @@ abstract public class AbstractInterpreterGui extends JFrame
         interpreter.addObserver(controller);
 
         outputPane = createTextPane();
-        outputPane.setFocusable(true);
+        outputPane.setRequestFocusEnabled(true); // setFocusable(true); bestaat niet in JDK 1.3
         outputPane.addMouseListener(new InputPaneSelector());
         JScrollPane scrollPane = new JScrollPane(outputPane);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -62,7 +62,8 @@ abstract public class AbstractInterpreterGui extends JFrame
 
         InputAction inputAction = new InputAction();
         inputPane = new JTextField(40);
-        inputPane.setFont(new Font("monospaced", Font.PLAIN, ProcessEnvironment.getEnvironment().getFontSize()));
+		int fontSize = ProcessEnvironment.getEnvironment().getFontSize();
+        inputPane.setFont(new Font("monospaced", fontSize < 16 ? Font.PLAIN : Font.BOLD, fontSize));
         inputPane.setAction(inputAction);
         inputPane.addKeyListener(inputAction);
         String[] inputPanePopupActions = { DefaultEditorKit.cutAction, DefaultEditorKit.copyAction, DefaultEditorKit.pasteAction };

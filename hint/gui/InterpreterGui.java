@@ -320,7 +320,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 
         public void actionPerformed(ActionEvent event)
         {
-            try { new BrowserProcess("http://www.cs.uu.nl/~afie/helium/"); }
+            try { new BrowserProcess("http://www.cs.uu.nl/~afie/helium/docs/HintUserManual.html"); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
     }

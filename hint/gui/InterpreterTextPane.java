@@ -33,7 +33,8 @@ public class InterpreterTextPane extends JTextPane
     {
         super();
 
-        setFont(new Font("Monospaced", Font.PLAIN, ProcessEnvironment.getEnvironment().getFontSize()));
+		int fontSize = ProcessEnvironment.getEnvironment().getFontSize();
+        setFont(new Font("Monospaced", fontSize < 16 ? Font.PLAIN : Font.BOLD, fontSize));
         setPreferredSize(new Dimension(600, 400));
 
         StyleContext styleContext = new StyleContext();

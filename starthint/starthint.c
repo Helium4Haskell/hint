@@ -1,59 +1,105 @@
 
 
-/**
- * Vul voor TEMPLATE de uit te voeren commandline in. Gebruik %s voor
- * de inhoud van de omgevingsvariable HELIUMBINDIR en %% voor het
- * procent teken.
- *
- * Geef voor HELIUMBINDIR de naam van de omgevingsvariable op die de
- * bin-directory bevat.
- */
-
-#define TEMPLATE     "javaw -DPATH=\"%s;%%PATH%%\" -jar \"%s\\Hint.jar\""
-#define HELIUMBINDIR "HELIUMBINDIR"
-
-
 #include <windows.h>
-#include <stdlib.h>
-#include <stdio.h>
+
+
+BOOL getHeliumBinDirectory(LPTSTR directoryBuffer, const DWORD bufferCharacterSize)
+{
+    DWORD valueLength;
+    DWORD dirAttributes;
+
+    valueLength = GetEnvironmentVariable("HELIUMBINDIR", directoryBuffer, bufferCharacterSize);
+    if (valueLength <= 0 || valueLength > bufferCharacterSize)
+        return FALSE;
+
+    if (directoryBuffer[valueLength-1] == '\\')
+        directoryBuffer[valueLength-1] = '\0';
+
+    dirAttributes = GetFileAttributes(directoryBuffer);
+    if (dirAttributes == 0xFFFFFFFF || !(dirAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        return FALSE;
+
+    return TRUE;
+}
+
+
+BOOL createHintProcess(LPCTSTR hintCommandline)
+{
+    TCHAR               commandline[MAX_PATH+1];
+    BOOL                result;
+    STARTUPINFO         startupInfo;
+    PROCESS_INFORMATION processInfo;
+    DWORD               exitCode;
+
+    lstrcpyn(commandline, hintCommandline, min(lstrlen(hintCommandline), MAX_PATH));
+
+    ZeroMemory(&startupInfo, sizeof(STARTUPINFO));
+    ZeroMemory(&processInfo, sizeof(PROCESS_INFORMATION));
+
+    startupInfo.cb = sizeof(PROCESS_INFORMATION);
+
+    result = CreateProcess( NULL
+                          , commandline
+                          , NULL
+                          , NULL
+                          , FALSE
+                          , DETACHED_PROCESS
+                          , NULL
+                          , NULL
+                          , &startupInfo
+                          , &processInfo
+                          );
+
+    if (!result || !processInfo.hProcess)
+        return FALSE;
+
+    exitCode = 0;
+    WaitForInputIdle(processInfo.hProcess, INFINITE);
+    GetExitCodeProcess(processInfo.hProcess, &exitCode);
+    if (exitCode != STILL_ACTIVE)
+        return FALSE;
+
+    return TRUE;
+}
+
+
+BOOL createHintCommandline(LPTSTR commandlineBuffer, INT commandlineCharacterSize, LPCTSTR binDirectory)
+{
+    LPCTSTR commandlineTemplate = "javaw -DPATH=\"%s;%%PATH%%\" -jar \"%s\\Hint.jar\"";
+
+    if (lstrlen(commandlineTemplate) + 2 * commandlineCharacterSize <= lstrlen(binDirectory))
+        return FALSE;
+
+    wsprintf(commandlineBuffer, commandlineTemplate, binDirectory, binDirectory);
+    return TRUE;
+}
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-{ 
-    PROCESS_INFORMATION info;
-    STARTUPINFO startup;
-    char commandline[MAX_PATH];
-    char *heliumBinDir;
+{
+    TCHAR binDirectory[MAX_PATH+1];
+    TCHAR commandline[MAX_PATH+1];
+    TCHAR errorMessage[MAX_PATH+100];
 
-    heliumBinDir = getenv(HELIUMBINDIR);
-    if (!heliumBinDir || strlen(heliumBinDir) <= 0)
+    if (!getHeliumBinDirectory(binDirectory, MAX_PATH))
     {
-        MessageBox(NULL, "The " HELIUMBINDIR " variable is not available", "Error", 0);
+        MessageBox(NULL, "Invalid or non-existent HELIUMBINDIR environment variable or directory", "Environment error", MB_ICONERROR);
         return -1;
     }
 
-    if (heliumBinDir[strlen(heliumBinDir)-1] == '\\')
-        heliumBinDir[strlen(heliumBinDir)-1] = '\0';
-
-    sprintf(commandline, TEMPLATE, heliumBinDir, heliumBinDir);
-
-    memset(&startup, '\0', sizeof(STARTUPINFO));
-    memset(&info,    '\0', sizeof(PROCESS_INFORMATION));
-	
-	CreateProcess(NULL, commandline, NULL, NULL, FALSE, 0, NULL, NULL, &startup, &info);
-    /* CreateProcess geeft een niet-nul resultaat ook al gaat het goed. 
-	   De LastError is dan 6, ERROR_INVALID_HANDLE volgens WinError.c
-	int result;
-	char message[100];
-
-	if ((result = ...) != 0)
+    if (!createHintCommandline(commandline, MAX_PATH, binDirectory))
     {
-		result = GetLastError();
-		sprintf(message, "Failed with error code %d", result);
-        MessageBox(NULL, commandline, message, 0);
+        MessageBox(NULL, "Unable to create the commandline", "Commandline error", MB_ICONERROR);
         return -1;
     }
-	*/
+
+    if (!createHintProcess(commandline))
+    {
+        wsprintf(errorMessage, "Unable to start Hint with the following commandline:\n%s", commandline);
+
+        MessageBox(NULL, errorMessage, "Execution error", MB_ICONERROR);
+        return -1;
+    }
 
     return 0;
 }
