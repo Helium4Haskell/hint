@@ -217,5 +217,9 @@ getNameOnly path
        let paths = split sep path
        let file  = last paths
        let parts = split '.' file
-       return $ foldr1 (\l r -> l ++ "." ++ r) (if length parts > 1 then init parts else parts)
+       return $ trivialRewrite $ foldr1 (\l r -> l ++ "." ++ r) (if length parts > 1 then init parts else parts)
+  where
+    trivialRewrite :: String -> String
+    trivialRewrite ('.' : '/' : s) = s
+    trivialRewrite s = s
 

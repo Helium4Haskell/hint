@@ -430,7 +430,7 @@ keyboardHandler console (EventKey key modifiers _)
               ifcond_ (not $ null command)
                 $ do -- Since we handle the newline ourself, we have to
                      -- add the newline. And also add another prompt.
-                     textCtrlAppendText textctrl "\n"
+                     textCtrlAppendText textctrl "\r\n"
                      ifcond (get console displayPrompt)
                        $ do prompt <- get console prompt
                             textCtrlAppendText textctrl prompt

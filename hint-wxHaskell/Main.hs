@@ -69,8 +69,8 @@ hint
              , on (menu about)   := infoDialog f "About Hint" "Hint - Helium Interpreter\nArie Middelkoop, 2004\nhttp://www.cs.uu.nl/helium\n\nReport bugs and suggestions to:\nhelium@cs.uu.nl"
              , on (menu mExit)   := do reset interpreter
                                        close f
-             , on (menu mReload) := hintOnCommand interpreter f c (Just ":r")
-             , on (menu mHintCommands) := hintOnCommand interpreter f c (Just ":?")
+             , on (menu mReload) := echo c ":r" $ hintOnCommand interpreter f c (Just ":r")
+             , on (menu mHintCommands) := echo c ":?" $ hintOnCommand interpreter f c (Just ":?")
              , on (menu mClearScreen) := clear c
              , on (menu mTerminate) := reset interpreter
              , visible    := True
@@ -79,18 +79,24 @@ hint
        hintOnFinish c interpreter
        setFocus c
   where
+    echo :: Console c => c -> String -> IO () -> IO ()
+    echo console text action
+      = do addData console InputStyle Nothing (text ++ "\r\n")
+           action
+
     onOpen interpreter f c
       = do -- changes working directory
            mbfname <- fileOpenDialog f True True "Open module" [("Helium module", ["*.hs"])] "" ""
            case mbfname of
              Nothing    -> return ()
              Just fname -> do name <- getNameOnly fname
-                              hintOnCommand interpreter f c (Just (":l " ++ name))
+                              let cmd = ":l " ++ name
+                              echo c cmd $ hintOnCommand interpreter f c (Just cmd)
 
     initializeInterpreter :: TextCtrlConsole -> IO Interpreter
     initializeInterpreter c
-      = do installdir <- getInstallationDirectory
-           -- let installdir = "C:\\Program Files\\Helium"
+      = do -- installdir <- getInstallationDirectory
+           let installdir = "C:\\Program Files\\Helium"
            libdir <- pathAdd installdir "lib"
            bindir <- pathAdd installdir "bin"
 
@@ -127,7 +133,7 @@ hintOnCommand interpreter frame console (Just command)
                             set console [ rememberFutureInput := False
                                         , displayPrompt       := False
                                         ]
-                            evaluate (control console) interpreter False False False command
+                            evaluate (control console) interpreter False False False False command
                             return ()
 
 
@@ -209,7 +215,7 @@ hintOnFinish console interpreter
   = do reset interpreter
        state <- varGet interpreter
        set console [ rememberFutureInput := True
-                   , prompt              := (currentModule state ++ "> ")
+                   , prompt              := (currentModuleName state ++ "> ")
                    , displayPrompt       := True
                    ]
        return ()

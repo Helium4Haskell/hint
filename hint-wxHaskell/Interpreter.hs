@@ -30,11 +30,13 @@ data InterpreterState
        , libraryDirs           :: [FilePath]
        , binaryDirs            :: [FilePath]
        , currentModule         :: String
+       , currentModuleName     :: String
        , targetModule          :: String
        , additionalModules     :: [String]
        , compileOnly           :: Bool
        , ignoreWarnings        :: Bool
        , showExprType          :: Bool
+       , fullCompile           :: Bool
        }
 
 
@@ -68,17 +70,19 @@ create onOutput onFinish libDirs binDirs
                  , libraryDirs           = libDirs
                  , binaryDirs            = binDirs
                  , currentModule         = "Prelude"
+                 , currentModuleName     = "Prelude"
                  , targetModule          = "Prelude"
                  , additionalModules     = []
                  , compileOnly           = False
                  , ignoreWarnings        = False
                  , showExprType          = False
+                 , fullCompile           = True
                  }
 
 
 -- Runs the expression
-evaluate :: Window a -> Interpreter -> Bool -> Bool -> Bool -> String -> IO ()
-evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expression
+evaluate :: Window a -> Interpreter -> Bool -> Bool -> Bool -> Bool -> String -> IO ()
+evaluate window interpreter isCompileOnly isFullCompile isIgnoreWarnings isShowExprType expression
   = let tempfileName = interpreterMainModule ++ ".hs"
      in do reset interpreter  -- abort any (possibly) running operations
            state <- varGet interpreter
@@ -87,15 +91,24 @@ evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expres
                               , compileOnly       = isCompileOnly
                               , ignoreWarnings    = isIgnoreWarnings
                               , showExprType      = isShowExprType
+                              , fullCompile       = isFullCompile
                               }
 
            -- build tempfile
            tempfile <- getTempFilename tempfileName
            writeMainModule tempfile expression (additionalModules state' ++ [targetModule state'])
 
+           -- remove previously compiled results
+           when (fullCompile state')
+             $ do let binary = targetModule state' ++ ".lvm"
+                  exists <- doesFileExist binary
+                  when exists
+                    $ removeFile binary
+
            -- create commandline for this tempfile
            libpathString <- concatPaths (libraryDirs state') "."
-           (Right command) <- commandline "helium" ["-P", libpathString, tempfile] (binaryDirs state')
+           let additionalFlags = if fullCompile state' then ["-b"] else []
+           (Right command) <- commandline "helium" (additionalFlags ++ ["-P", libpathString, tempfile]) (binaryDirs state')
 
            -- execute helium.
            -- interpreter will be executed when this process is finished.
@@ -175,6 +188,7 @@ evaluate window interpreter isCompileOnly isIgnoreWarnings isShowExprType expres
                                                         , alreadyDead = True
                                                         , compilationCompleted = True
                                                         , currentModule = currentModulePath
+                                                        , currentModuleName = onlyModuleName
                                                         }
 
 
@@ -338,7 +352,7 @@ loadModule window interpreter mod
        when (not $ isJust $ running state)
          $ do let state' = state { targetModule = mod }
               varSet interpreter state'
-              evaluate window interpreter True True False "\"should not see this :)\""
+              evaluate window interpreter True True False False ("\"<<load module does not evaluate code>>\"")
 
 
 -- adds the module to the also-load-modules list.
@@ -367,7 +381,7 @@ compileForType :: Window a -> Interpreter -> String -> IO ()
 compileForType window interpreter expr
   = do state <- varGet interpreter
        when (not $ isJust $ running state)
-         $ evaluate window interpreter True True True expr
+         $ evaluate window interpreter True False True True expr
 
 
 -- remove temporary files created while compiling.
