@@ -21,11 +21,12 @@ public class EditorProcess
         if (column < 0)
             throw new IllegalArgumentException("column > 0");
 
-        String commandline = createCommandline(ProcessEnvironment.getEnvironment().getEditorCommandlineTemplate(), file.getName(), row, column);
+        String commandline = createCommandline(ProcessEnvironment.getEnvironment().getEditorCommandlineTemplate(), 
+                file.getAbsolutePath() /* file.getName()*/, row, column);
         if (commandline.trim().equals(""))
             throw new IOException("empty commandline");
 
-        Runtime.getRuntime().exec(commandline, null, file.getParentFile());
+        Runtime.getRuntime().exec(commandline, null); //, file.getParentFile());
     }
 
 
@@ -54,9 +55,9 @@ public class EditorProcess
                         break;
 
                     case 'f':
-                        output.append("\"");
+                        // output.append("\"");
                         output.append(filename);
-                        output.append("\"");
+                        // output.append("\"");
                         break;
 
                     case 'r':
