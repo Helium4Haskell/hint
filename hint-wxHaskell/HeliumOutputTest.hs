@@ -1,4 +1,6 @@
 -- Open this file with hugs or ghci and run test.
+--
+-- If you run this file with hugs, make sure to increase the default heap size... :+
 
 module HeliumOutputTest
 where

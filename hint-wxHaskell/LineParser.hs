@@ -1,4 +1,5 @@
--- | Simple Line-based parser combinators (greedy with lookahead of a single line of text)
+-- | Simple Line-based parser combinators. Greedy, top down, and infinite look-ahead of
+--   who lines.
 --
 -- A Primitive parser parses a single line. The combiniators combine this results. The
 -- data is applied to the parser line by line. The result can be obtained when all the

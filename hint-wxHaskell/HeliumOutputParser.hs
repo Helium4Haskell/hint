@@ -11,14 +11,13 @@ import Data.List
 import LineParser
 import StringOps
 
-import Debug.Trace
-
 
 
 data Module
   = Module { name          :: String
            , notifications :: [Notification]
            , result        :: ModuleResult
+           , scope         :: [(String, String)]
            }
   deriving Show
 
@@ -65,6 +64,8 @@ pModule :: LineParser IntermediateResult Module
 pModule
   = do name <- pStartCompiling
        addInterResult (StartCompiling name)
+       scope <- pScope
+       many pEmptyLine
        notifications <- many ( do notification <- pNotification
                                   many pEmptyLine
                                   return notification
@@ -77,6 +78,7 @@ pModule
        return $ Module { name          = name
                        , notifications = notifications
                        , result        = result
+                       , scope         = scope
                        }
  <|> do mod <- pUpToDate
         many pEmptyLine
@@ -88,9 +90,10 @@ pUpToDate :: LineParser IntermediateResult Module
 pUpToDate
   = mkParser "pUpToDate"
              ( \input -> if "is up to date" `isSubsequenceOf` input
-                         then Just $ Module { name = head $ words input
+                         then Just $ Module { name          = head $ words input
                                             , notifications = []
-                                            , result = FinishedOk
+                                            , result        = FinishedOk
+                                            , scope         = []
                                             }
                          else Nothing
              )
@@ -200,7 +203,7 @@ pFirstNotificationLine
 
 
 -- | Parses a line in a notification.
-pNotificationLine :: LineParser IntermediateResult String
+pNotificationLine :: LineParser interResult String
 pNotificationLine
   = mkParser "pBlockLine"
              ( \input -> if " " `isPrefixOf` input
@@ -209,10 +212,50 @@ pNotificationLine
              )
 
 
+-- | Parses the scope information of a helium module.
+pScope :: LineParser interResult [(String, String)]
+pScope
+  = do pStartsWith "Fixity declarations:"
+       many pNotificationLine
+       pStartsWith "Data types:"
+       many pNotificationLine
+       pStartsWith "Type synonyms:"
+       many pNotificationLine
+       pStartsWith "Value constructors:"
+       constructorTypes <- many pTypeDeclaration
+       pStartsWith "Functions:"
+       functionTypes <- many pTypeDeclaration
+       return (constructorTypes ++ functionTypes)
+ <|> return []
+
+
+-- | Parses a type declaration.
+pTypeDeclaration :: LineParser interResult (String, String)
+pTypeDeclaration
+  = mkParser "pTypeDeclaration"
+             ( \input ->
+                 let ws = words input
+                     (n:s:ts) = ws
+                  in if length ws >= 3 && s == "::"
+                     then Just (n, unwords ts)
+                     else Nothing
+             )
+
+
 -- | Parses an unkown sentence.
-pUnkown :: LineParser IntermediateResult String
+pUnkown :: LineParser interResult String
 pUnkown
   = mkParser "pUnkown" Just
+
+
+-- | Parses a sentence that has the given prefix (ignores case).
+pStartsWith :: String -> LineParser interResult String
+pStartsWith prefix
+  = mkParser ( "pStartsWith_" ++ prefix )
+             ( \input -> if toLowerCase prefix `isPrefixOf` toLowerCase input
+                         then Just input
+                         else Nothing
+             )
 
 
 -- | Parses a single empty line (a line consisting only of spaces)
