@@ -331,7 +331,7 @@ evaluate window interpreter isCompileOnly isFullCompile isIgnoreWarnings isShowE
                                                 O.Warning l s -> (l, s, True)
 
            -- publish the location of the notification
-           when (not isMainModule && null locations && not (isWarning && ignoreWarnings state))
+           when (not isMainModule && not (null locations) && not (isWarning && ignoreWarnings state))
              $ do foldl1 (\ioL ioR -> do ioL; publish ", " Nothing; ioR) (map (\(r,c) -> publishLink publish r c) locations)
                   publish ": " Nothing
 

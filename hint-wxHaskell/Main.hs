@@ -95,8 +95,8 @@ hint
 
     initializeInterpreter :: TextCtrlConsole -> IO Interpreter
     initializeInterpreter c
-      = do -- installdir <- getInstallationDirectory
-           let installdir = "C:\\Program Files\\Helium"
+      = do installdir <- getInstallationDirectory
+           -- let installdir = "C:\\Program Files\\Helium"
            libdir <- pathAdd installdir "lib"
            bindir <- pathAdd installdir "bin"
 
