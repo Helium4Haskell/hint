@@ -8,7 +8,7 @@
 
 
 module HeliumOutputParser
-  ( parse
+  ( parseHeliumOutput
   , Module (Module, name, notifications, result, scope)
   , Notification (Error, Warning)
   , ModuleResult (FinishedOk, FinishedWithWarnings, FinishedWithErrors, NotFinished)
@@ -20,7 +20,9 @@ where
 import Data.Char
 import Data.Either
 import Data.List
-import LineParser
+import Text.ParserCombinators.Parsec.Prim
+import Text.ParserCombinators.Parsec.Combinator
+import Text.ParserCombinators.Parsec.Char
 import StringOps
 
 
@@ -48,477 +50,204 @@ data ModuleResult
   deriving Show
 
 
--- Do not use this... will be obsolete when I replace the parser.
-data IntermediateResult
-  = StartCompiling String
-  | Notification Notification
-  | EndCompiling ModuleResult
-  | UnkownOutput String
-  deriving Show
-
-
 -- interface to the parser.
 -- returns the list of modules outputed by helium and
 -- a string with unrecognized output.
-parse :: String -> ([Module], String)
-parse input
-  = let state = startParsing pHeliumOutput
-        endState = snd $ fromRight $ addData input state
-        result = snd $ fromRight $ endParsing endState
-     in result
-  where
-    fromRight x
-      = case x of
-          Right y -> y
-          Left  x -> error ("oops: " ++ x)
-
-
-
-
-
+parseHeliumOutput :: String -> ([Module], String)
+parseHeliumOutput input
+  = let result = parse pHeliumOutput "Helium output" input
+     in case result of
+          Left err -> error ("(!!!) Unexpected result from Helium:\n" ++ show err)
+          Right x -> x
 
 
 -- | Parses the output of the helium compiler
-
 --   Returns the list of modules whose output is
-
 --   successfully parsed and a string of unrecognized
-
 --   output.
-
-pHeliumOutput :: LineParser IntermediateResult ([Module], String)
-
+pHeliumOutput :: Parser ([Module], String)
 pHeliumOutput
-
-  = do modules <- many pModule
-
-       unkown  <- many ( do s <- pUnkown
-
-                            addInterResult (UnkownOutput s)
-
-                            return s
-
-                       )
-
-       return (modules, unlines unkown)
-
-
-
+  = do modules <- many $ try $ pModule
+       unkown <- many $ anyChar
+       return (modules, unkown)
 
 
 -- | Parses the compilation of a module.
-
-pModule :: LineParser IntermediateResult Module
-
+pModule :: Parser Module
 pModule
+  =  try pUncompiledModule
+ <|> pCompiledModule
+  where
+    pUncompiledModule :: Parser Module
+    pUncompiledModule
+      = do name <- pStartCompiling
+           scope <- pScope
+           spaces
+           notifications <- many $ try $ do notification <- pNotification
+                                            spaces
+                                            return notification
+           result <-  (  try $ pEndCompiling
+                     <|> return NotFinished
+                      )
+           spaces
+           return $ Module { name = name
+                           , notifications = notifications
+                           , result = result
+                           , scope = scope
+                           }
 
-  = do name <- pStartCompiling
-
-       addInterResult (StartCompiling name)
-
-       scope <- pScope
-
-       many pEmptyLine
-
-       notifications <- many ( do notification <- pNotification
-
-                                  many pEmptyLine
-
-                                  return notification
-
-                             )
-
-       result <-  (  pEndCompiling
-
-                 <|> return NotFinished
-
-                  )
-
-       addInterResult (EndCompiling result)
-
-       many pEmptyLine
-
-       return $ Module { name          = name
-
-                       , notifications = notifications
-
-                       , result        = result
-
-                       , scope         = scope
-
-                       }
-
- <|> do mod <- pUpToDate
-
-        many pEmptyLine
-
-        return mod
-
-
-
-
-
--- | Parses the up-to-date message.
-
-pUpToDate :: LineParser IntermediateResult Module
-
-pUpToDate
-
-  = mkParser "pUpToDate"
-
-             ( \input -> if "is up to date" `isSubsequenceOf` input
-
-                         then Just $ Module { name          = head $ words input
-
-                                            , notifications = []
-
-                                            , result        = FinishedOk
-
-                                            , scope         = []
-
-                                            }
-
-                         else Nothing
-
-             )
-
-
-
+    pCompiledModule :: Parser Module
+    pCompiledModule
+      = do mod <- pUpToDate
+           spaces
+           return mod
 
 
 -- | Parses the:
-
 --     Compiling <module name>
-
 --   output of helium and returns the name of the module.
-
-pStartCompiling :: LineParser IntermediateResult String
-
+pStartCompiling :: Parser String
 pStartCompiling
-
-  = mkParser "pCompiling"
-
-             ( \input -> let w = words input
-
-                          in if length w >= 2 && "compiling" `isPrefixOf` (toLowerCase $ head w)
-
-                             then Just $ unwords $ tail $ w
-
-                             else Nothing
-
-             )
-
-
-
-
-
--- | Parses the end sentence of compiling one module
-
-pEndCompiling :: LineParser IntermediateResult ModuleResult
-
-pEndCompiling
-
-  =  mkParser "pEndCompiling_error"
-
-              ( \input -> if sFailed `isPrefixOf` input
-
-                          then Just $ FinishedWithErrors $ read $ takeWhile isDigit $ drop (length sFailed) input
-
-                          else Nothing
-
-              )
-
- <|> mkParser "pEndCompiling_warning"
-
-              ( \input -> if sWarning `isPrefixOf` input
-
-                          then Just $ FinishedWithWarnings $ read $ takeWhile isDigit $ drop (length sWarning) input
-
-                          else Nothing
-
-              )
-
- <|> mkParser "pEndCompiling_ok"
-
-              ( \input -> if sOk `isPrefixOf` input
-
-                          then Just $ FinishedOk
-
-                          else Nothing
-
-              )
-
-  where sFailed  = "Compilation failed with "
-
-        sWarning = "Compilation successful with "
-
-        sOk      = "Compilation successful"
-
-
-
-
-
--- | Parses a notification. A notification is a warning or error from
-
---   the helium compiler. If the first line of the notification consists
-
---   of the word 'warning:', then the notification is considered a
-
---   warning, otherwise an error.
-
-pNotification :: LineParser IntermediateResult Notification
-
-pNotification
-
-  =  do (locations, message) <- pFirstNotificationLine
-
-        additional <- many pNotificationLine
-
-        let notification = ( if "warning:" `isSubsequenceOf` (toLowerCase message)
-
-                             then Warning
-
-                             else Error
-
-                           ) locations (unlines $ message : additional)
-
-        addInterResult (Notification notification)
-
-        return notification
-
-
-
-
-
--- | Parses the first line of the notification.
-
---
-
---   This is not a very nice function... unfortunately, the
-
---   regex library is not available for ghc 6.0.2 on win xp.
-
---   I could use Parsec, but it seems a little overkill...
-
-pFirstNotificationLine :: LineParser IntermediateResult ([(Int, Int)], String)
-
-pFirstNotificationLine
-
-  = mkParser "pFirstNotificationLine"
-
-             ( \input -> if length input > 0 && head input == '('
-
-                         then do (sPositions, message) <- hasColumn input
-
-                                 hasChar ',' sPositions
-
-                                 hasChar '(' sPositions
-
-                                 hasChar ')' sPositions
-
-                                 positions <- isPositions $ getPositions $ sPositions
-
-                                 return (positions, message)
-
-                         else Nothing
-
-             )
-
-  where
-
-    hasColumn :: String -> Maybe (String, String)
-
-    hasColumn input
-
-      = let (l, r) = break (== ':') input
-
-         in if null r
-
-            then Nothing
-
-            else Just (l, drop 1 r)
-
-
-
-    hasChar :: Char -> String -> Maybe ()
-
-    hasChar char input
-
-      | char `elem` input = Just ()
-
-      | otherwise         = Nothing
-
-
-
-    getPositions :: String -> [(String, String)]
-
-    getPositions input
-
-      = let l = split '(' input
-
-            l' = map (split ',') l
-
-            f (x:y:_) = (x, takeWhile (/= ')') y)
-
-            f _       = ("", "")
-
-         in map f l'
-
-
-
-    isPositions :: [(String, String)] -> Maybe [(Int, Int)]
-
-    isPositions
-
-      = foldr ( \(l,r) n -> do x <- toIntTuple l r
-
-                               xs <- n
-
-                               return (x : xs)
-
-              ) (return [])
-
-    
-
-    toIntTuple :: String -> String -> Maybe (Int, Int)
-
-    toIntTuple l r
-
-      | all isDigit l && all isDigit r = Just (read l, read r)
-
-      | otherwise = Nothing
-
-
-
-
-
--- | Parses a line in a notification.
-
-pNotificationLine :: LineParser interResult String
-
-pNotificationLine
-
-  = mkParser "pBlockLine"
-
-             ( \input -> if " " `isPrefixOf` input
-
-                         then Just input
-
-                         else Nothing
-
-             )
-
-
-
+  = do string "Compiling "
+       name <- pNonemptyLine
+       return name
 
 
 -- | Parses the scope information of a helium module.
-
-pScope :: LineParser interResult [(String, String)]
-
+pScope :: Parser [(String, String)]
 pScope
-
-  = do pStartsWith "Fixity declarations:"
-
-       many pNotificationLine
-
-       pStartsWith "Data types:"
-
-       many pNotificationLine
-
-       pStartsWith "Type synonyms:"
-
-       many pNotificationLine
-
-       pStartsWith "Value constructors:"
-
-       constructorTypes <- many pTypeDeclaration
-
-       pStartsWith "Functions:"
-
-       functionTypes <- many pTypeDeclaration
-
-       return (constructorTypes ++ functionTypes)
-
+  =  try ( do string "Fixity declarations:"
+              pLine
+              many pNonemptyLine
+              string "Data types:"
+              pLine
+              many pNonemptyLine
+              string "Type synonyms:"
+              pLine
+              many pNonemptyLine
+              string "Value constructors:"
+              pLine
+              constructorTypes <- try $ many pTypeDeclaration
+              spaces
+              string "Functions:"
+              pLine
+              functionTypes <- try $ many pTypeDeclaration
+              spaces
+              return (constructorTypes ++ functionTypes)
+         )
  <|> return []
 
 
-
-
-
 -- | Parses a type declaration.
-
-pTypeDeclaration :: LineParser interResult (String, String)
-
+pTypeDeclaration :: Parser (String, String)
 pTypeDeclaration
-
-  = mkParser "pTypeDeclaration"
-
-             ( \input ->
-
-                 let ws = words input
-
-                     (n:s:ts) = ws
-
-                  in if length ws >= 3 && s == "::"
-
-                     then Just (n, unwords ts)
-
-                     else Nothing
-
-             )
+  = do spaces
+       name <- manyTill anyChar (string "::")
+       tp <- pNonemptyLine
+       return (trimSpaces name, trimSpaces tp)
 
 
+-- | Parses a notification. A notification is a warning or error from
+--   the helium compiler. If the first line of the notification consists
+--   of the word 'warning:', then the notification is considered a
+--   warning, otherwise an error.
+pNotification
+  = do (locations, message) <- pFirstNotificationLine
+       additional <- many pNotificationLine
+       let notification = ( if "warning:" `isSubsequenceOf` (toLowerCase message)
+                            then Warning
+                            else Error
+                           ) locations (unlines $ message : additional)
+       return notification
 
 
-
--- | Parses an unkown sentence.
-
-pUnkown :: LineParser interResult String
-
-pUnkown
-
-  = mkParser "pUnkown" Just
-
-
-
-
-
--- | Parses a sentence that has the given prefix (ignores case).
-
-pStartsWith :: String -> LineParser interResult String
-
-pStartsWith prefix
-
-  = mkParser ( "pStartsWith_" ++ prefix )
-
-             ( \input -> if toLowerCase prefix `isPrefixOf` toLowerCase input
-
-                         then Just input
-
-                         else Nothing
-
-             )
+-- | Parses the first line of the notification.
+pFirstNotificationLine :: Parser ([(Int, Int)], String)
+pFirstNotificationLine
+  = do positions <- sepBy1 pTuple (char ',')
+       string ": "
+       reason <- pNonemptyLine
+       return (positions, reason)
+  where
+    pTuple :: Parser (Int, Int)
+    pTuple
+      = do char '('
+           row <- pInt
+           char ','
+           col <- pInt
+           char ')'
+           return (row, col)
 
 
+-- Parses a line in a notification. This is a non-empty line.
+pNotificationLine :: Parser String
+pNotificationLine
+  = do sps <- many1 (char ' ')
+       txt <- pNonemptyLine
+       return (sps ++ txt)
 
 
+-- | Parses the end sentence of compiling one module
+pEndCompiling :: Parser ModuleResult
+pEndCompiling
+  =  try pCompilingError
+ <|> try pCompilingWarning
+ <|> pCompilingOk
+  where
+    pCompilingError :: Parser ModuleResult
+    pCompilingError
+      = do string "Compilation failed with "
+           errors <- pInt
+           pLine
+           return $ FinishedWithErrors errors
 
--- | Parses a single empty line (a line consisting only of spaces)
+    pCompilingWarning :: Parser ModuleResult
+    pCompilingWarning
+      = do string "Compilation successful with "
+           warnings <- pInt
+           pLine
+           return $ FinishedWithWarnings warnings
 
-pEmptyLine :: LineParser interResult ()
-
-pEmptyLine
-
-  = mkParser "pEmptyLine"
-
-             ( \input -> if all isSpace input
-
-                         then Just ()
-
-                         else Nothing
-
-             )
+    pCompilingOk :: Parser ModuleResult
+    pCompilingOk
+      = do string "Compilation successful"
+           newline
+           return FinishedOk
 
 
+-- | Parses the up-to-date message.
+pUpToDate
+  = do line <- pLine
+       ( if "is up to date" `isSubsequenceOf` line
+         then return $ Module { name       = head $ words line
+                              , notifications = []
+                              , result        = FinishedOk
+                              , scope         = []
+                              }
+         else fail ("Is not an up-to-date message: " ++ line ++ ".")
+        )
+
+
+-- parses one single line of text.
+pLine
+  =  ( try $ manyTill anyChar (newline <|> (do string "\r\n"; return '\n')) )
+ <|> ( do str <- many1 anyChar
+          eof
+          return str
+     )
+
+
+-- parses a non-empty line of text.
+pNonemptyLine
+  =  do str <- many1 $ noneOf ['\n', '\r']
+        (newline <|> (do string "\r\n"; return '\n'))
+        return str
+
+
+-- parses an integer (>= 0)
+-- needs to fit in an Int
+pInt :: Parser Int
+pInt
+  = do digits <- many1 digit
+       return $ read digits
 

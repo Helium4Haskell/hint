@@ -1,5 +1,5 @@
 -- | A collection of operations on strings and lists.
-module StringOps
+module StringOps(toLowerCase, isSubsequenceOf, split, trimSpaces)
 where
 
 
@@ -32,4 +32,10 @@ split key haystack
      in if null l
         then rem
         else l : rem
+
+
+-- | Removes spaces from begin and end of a string.
+trimSpaces :: String -> String
+trimSpaces
+  = reverse. dropWhile (== ' ') . reverse . dropWhile (== ' ')
 

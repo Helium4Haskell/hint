@@ -120,7 +120,9 @@ evaluate window interpreter expression
                      -- parse the results to investigate errors
                      when ( not aborted )
                           ( do input <- pendingOutput interpreter
-                               let (modules, strangeOutput) = O.parse input
+                               putStrLn "Start:"
+                               putStrLn (show input)
+                               let (modules, strangeOutput) = O.parseHeliumOutput input
                                varSet interpreter state { reversedPendingOutput = []
                                                         , alreadyDead = True
                                                         , compilationCompleted = True
@@ -219,9 +221,9 @@ evaluate window interpreter expression
                                               when (not isMainModule)
                                                 $ publish $ ErrorOutput ("Failed compiling " ++ onlyModuleName ++ " with " ++ (show n) ++ " error" ++ (if n == 1 then "" else "s") ++ "\n") Nothing
                O.NotFinished            -> do when isMainModule
-                                                $ publish $ ErrorOutput ("Compiling of the expression did not finish!") Nothing
+                                                $ publish $ ErrorOutput ("Compiling of the expression did not finish!\n") Nothing
                                               when (not isMainModule)
-                                                $ publish $ ErrorOutput ("Compiling of " ++ onlyModuleName ++ " did not finish!") Nothing
+                                                $ publish $ ErrorOutput ("Compiling of " ++ onlyModuleName ++ " did not finish!\n") Nothing
             )
 
     -- output the result of a notification

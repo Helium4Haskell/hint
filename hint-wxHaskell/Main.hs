@@ -37,7 +37,8 @@ initHintConsole console
   = do clear console
        addData console SpecialStyle Nothing "Welcome to Hint, the interactive shell to Helium.\n\n"
        
-       [installdir] <- getArgs
+       args <- getArgs
+       let installdir = if length args == 1 then head args else "C:\\Program Files\\Helium"
        libdir <- pathAdd installdir "lib"
        bindir <- pathAdd installdir "bin"
 
