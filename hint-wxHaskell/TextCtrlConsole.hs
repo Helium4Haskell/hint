@@ -9,6 +9,7 @@
 module TextCtrlConsole ( module Console
                        , TextCtrlConsole (control)
                        , textCtrlConsole
+                       , appendData
                        )
 where
 

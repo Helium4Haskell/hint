@@ -79,9 +79,9 @@ hint
        hintOnFinish c interpreter
        setFocus c
   where
-    echo :: Console c => c -> String -> IO () -> IO ()
+    echo :: TextCtrlConsole -> String -> IO () -> IO ()
     echo console text action
-      = do addData console InputStyle Nothing (text ++ "\r\n")
+      = do appendData console InputStyle (text ++ "\r\n") (Just False)
            action
 
     onOpen interpreter f c
