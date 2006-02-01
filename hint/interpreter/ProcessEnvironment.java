@@ -17,15 +17,17 @@ public class ProcessEnvironment
 {
     private static ProcessEnvironment currentEnvironment = null;
 
-    private String editorCommandlineTemplate;
-    private String browserCommandlineTemplate;
-    private String additionalHeliumParameters;
-    private int    fontSize;
+    private String  editorCommandlineTemplate;
+    private String  browserCommandlineTemplate;
+    private String  additionalHeliumParameters;
+    private int     fontSize;
+    private boolean overloading;
 
-    public static final String DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r";
-    public static final String DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
-    public static final String DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
-    public static final int    DEFAULT_FONTSIZE                     = 12;
+    public static final String  DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r";
+    public static final String  DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
+    public static final String  DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
+    public static final int     DEFAULT_FONTSIZE                     = 12;
+    public static final boolean DEFAULT_OVERLOADING                  = false;
 
     public static final String CONFIG_FILENAME = ".hint.conf";
 
@@ -51,6 +53,7 @@ public class ProcessEnvironment
         setBrowserCommandlineTemplate(DEFAULT_BROWSER_COMMANDLINE_TEMPLATE);
         setAdditionalHeliumParameters(DEFAULT_ADDITIONAL_HELIUM_PARAMETERS);
         setFontSize(DEFAULT_FONTSIZE);
+        setOverloading(DEFAULT_OVERLOADING);
     }
 
 
@@ -64,6 +67,7 @@ public class ProcessEnvironment
         props.setProperty("browserCommandlineTemplate", getBrowserCommandlineTemplate());
         props.setProperty("additionalHeliumParameters", getAdditionalHeliumParameters());
         props.setProperty("fontSize",                   Integer.toString(getFontSize()));
+        props.setProperty("overloading",                Boolean.toString(getOverloading()));
 
         FileOutputStream outputStream = new FileOutputStream(configFile);
         props.store(outputStream, "Hint");
@@ -93,6 +97,9 @@ public class ProcessEnvironment
 
         if (props.containsKey("additionalHeliumParameters"))
             setAdditionalHeliumParameters(props.getProperty("additionalHeliumParameters"));
+        
+        if (props.containsKey("overloading"))
+            setOverloading(Boolean.parseBoolean(props.getProperty("overloading")));
 
 		try {
 			if (props.containsKey("fontSize"))
@@ -121,7 +128,16 @@ public class ProcessEnvironment
 
     public String getLVMEnvironmentSetting()
     {
-        return System.getProperty("LVMPATH");
+        String path = System.getProperty("LVMPATH");
+        String simple = "simple";
+
+        if (path.endsWith(simple))
+            path = path.substring(0, path.length()-simple.length()-1);
+
+        if (!overloading)
+            path = path + File.separator + simple;
+
+        return path;
     }
 
 
@@ -204,4 +220,16 @@ public class ProcessEnvironment
 		fontSize = newSize;
 	}
 	
+	
+	public boolean getOverloading()
+	{
+	    return overloading;
+    }
+    
+    
+    public void setOverloading(boolean b)
+    {
+        overloading = b;
+    }
 }
+

@@ -64,6 +64,12 @@ public class HeliumProcess extends AbstractIOProcess
             heliumCommandline = new Commandline(HELIUM_COMMAND_NAME, parameters.getModule().getParentFile());
         else
             heliumCommandline = new Commandline(HELIUM_COMMAND_NAME);
+        
+        String lvmPath = ProcessEnvironment.getEnvironment().getLVMEnvironmentSetting();
+        heliumCommandline.addParameter("-P " + lvmPath);
+        
+        if (ProcessEnvironment.getEnvironment().getOverloading())
+            heliumCommandline.addParameter("--overloading");
 
         if (parameters.evaluateExpressionType())
             heliumCommandline.addParameter("--dump-information");

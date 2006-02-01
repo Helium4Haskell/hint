@@ -1,3 +1,6 @@
+echo. Copy the icon files in the gui/icon directory to the release directory
+echo. otherwise you won't get icons.
+
 cd release
 call clean
 cd ..
