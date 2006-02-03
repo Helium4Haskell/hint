@@ -27,7 +27,7 @@ public class ProcessEnvironment
     public static final String  DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
     public static final String  DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
     public static final int     DEFAULT_FONTSIZE                     = 12;
-    public static final boolean DEFAULT_OVERLOADING                  = false;
+    public static final boolean DEFAULT_OVERLOADING                  = true;
 
     public static final String CONFIG_FILENAME = ".hint.conf";
 
