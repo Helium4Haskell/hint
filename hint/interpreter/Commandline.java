@@ -34,7 +34,7 @@ public class Commandline
 
     public Commandline(String commandName, File workingDirectory)
     {
-        this.absolutePath     = getAbsolutePath(commandName);
+        this.absolutePath     = commandName;
         this.parameters       = new LinkedList();
         this.workingDirectory = workingDirectory;
     }

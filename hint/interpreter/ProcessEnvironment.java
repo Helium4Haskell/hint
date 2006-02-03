@@ -99,7 +99,7 @@ public class ProcessEnvironment
             setAdditionalHeliumParameters(props.getProperty("additionalHeliumParameters"));
         
         if (props.containsKey("overloading"))
-            setOverloading(Boolean.parseBoolean(props.getProperty("overloading")));
+            setOverloading(Boolean.valueOf(props.getProperty("overloading")).booleanValue());
 
 		try {
 			if (props.containsKey("fontSize"))
