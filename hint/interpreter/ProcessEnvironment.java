@@ -134,6 +134,10 @@ public class ProcessEnvironment
         if (path.endsWith(simple))
             path = path.substring(0, path.length()-simple.length()-1);
 
+        // strip off trailing path seperator
+        if (path.length() >= 2 && path.endsWith(":"))
+            path = path.substring(0, path.length()-2);
+
         if (!overloading)
             path = path + File.separator + simple;
 
