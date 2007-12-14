@@ -1,0 +1,80 @@
+<project name="Hint" default="compile" basedir=".">
+    <description>
+        Build file for the Hint interpreter.
+    </description>
+  <!-- set global properties for this build -->
+  <property name="src.dir"        location="hint"/>
+  <property name="build.dir"      location="build"/>
+  <property name="dist.dir"       location="dist"/>
+
+  <property name="manifest"       value="hint.manifest"/>
+	  
+  <property name="version"        value="1.7" />
+  <property name="name"           value="Hint" />
+
+
+  <!-- ===================================================================== -->
+  <!-- BEFORECOMPILE                                                               -->
+  <!-- ===================================================================== -->
+
+  <target name="beforecompile">
+    <tstamp/>
+    <!-- Create the build directory structure used by compile -->
+    <mkdir dir="${build.dir}"/>
+  </target>
+
+
+  <!-- ===================================================================== -->
+  <!-- COPYBEFOREDIST                                                               -->
+  <!-- ===================================================================== -->
+
+  <target name="beforedist">
+    <!-- Create the time stamp -->
+    <tstamp/>
+    <!-- Create the dist directory structure used by dist -->
+
+    <mkdir dir="${dist.dir}"/>
+  </target>
+
+
+  <!-- ===================================================================== -->
+  <!-- COMPILE                                                               -->
+  <!-- ===================================================================== -->
+  <target name="compile" depends="beforecompile"
+        description="compile the source " >
+    <!-- Compile the java code from ${src} into ${build} -->
+    <javac srcdir="${src.dir}" destdir="${build.dir}">
+      <!--:w <compilerarg value="-Xlint"/> -->
+    </javac>
+    <copy todir="${build.dir}/hint">
+      <fileset dir="${src.dir}">
+         <include name="**/*.gif"/>
+         <include name="**/*.jpg"/>
+       </fileset>
+     </copy>
+  </target>  
+
+  <!-- ===================================================================== -->
+  <!-- JAR FILE                                                              -->
+  <!-- ===================================================================== -->
+
+  <target name="dist" depends="beforedist,compile" description="Create a jar file">
+
+    <jar jarfile="${dist.dir}/Hint-${version}.jar" compress="no"
+         basedir="${build.dir}" 
+         manifest="${manifest}"
+    />
+  </target>
+  
+
+  <!-- =================================================================== -->
+  <!-- CLEAN                                                               -->
+  <!-- =================================================================== -->
+  <target name="clean"
+        description="clean up" >
+    <!-- Delete the ${build} and ${dist} directory trees -->
+    <delete dir="${build.dir}"/>
+    <delete dir="${dist.dir}"/>
+  </target>
+
+</project>

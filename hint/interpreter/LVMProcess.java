@@ -31,7 +31,9 @@ public class LVMProcess extends AbstractIOProcess
         String lvmPath = ProcessEnvironment.getEnvironment().getLVMEnvironmentSetting();
         lvmCommandline.addParameter("-P" + lvmPath);
         lvmCommandline.addParameter(modulePath.getAbsolutePath());
-
+        
+        // System.out.println("Executing: "+lvmCommandline);
+        
         execute(lvmCommandline);
     }
 }

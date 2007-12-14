@@ -13,6 +13,7 @@ public class BrowserProcess
     public BrowserProcess(String url) throws IOException
     {
         String commandline = createCommandline(ProcessEnvironment.getEnvironment().getBrowserCommandlineTemplate(), url);
+        // System.out.println ("Executing: " + commandline);
         Runtime.getRuntime().exec(commandline);
     }
 
@@ -40,9 +41,9 @@ public class BrowserProcess
                         break;
 
                     case 'u':
-                        output.append("\"");
+                        // output.append("\""); Seems not to work.
                         output.append(url);
-                        output.append("\"");
+                        // output.append("\"");
                         break;
                 }
             }

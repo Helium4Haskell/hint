@@ -7,7 +7,7 @@ import java.io.*;
 
 /**
  * Abstraction of the commandline that can be used as input for the
- * Runtime.exec() method. It'll seach the paths provided by the environment
+ * Runtime.exec() method. It'll search the paths provided by the environment
  * to find the actual location of the executable. This prevents 'strange'
  * behavior when the user uses (for example) batch files with the same name
  * in the active directory.
@@ -87,7 +87,12 @@ public class Commandline
         return commandName;
     }
 
-
+    public String toString () {
+        LinkedList command = new LinkedList(parameters);
+        command.addFirst(absolutePath);
+        return command.toString();
+    }
+    
     public File getWorkingDirectory()
     {
         return workingDirectory;

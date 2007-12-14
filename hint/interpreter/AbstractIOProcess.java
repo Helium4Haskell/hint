@@ -112,7 +112,9 @@ abstract public class AbstractIOProcess
     	for (int i = 0; i < a.length; i++)
     		System.out.println(a[i]);*/
     		
-        externalProcess = Runtime.getRuntime().exec(commandline.toCommandArray(), ProcessEnvironment.getEnvironment().getEnvironmentSettings(), commandline.getWorkingDirectory());
+        externalProcess = Runtime.getRuntime().exec(commandline.toCommandArray(), 
+                  ProcessEnvironment.getEnvironment().getEnvironmentSettings(), 
+                  commandline.getWorkingDirectory());
         shutdownHook    = new ShutdownHook(externalProcess);
 
         input  = new BufferedReader(new InputStreamReader(externalProcess.getInputStream()));

@@ -101,7 +101,7 @@ public class InterpreterGui extends AbstractInterpreterGui
         {
             FileDialog dialog = new FileDialog(InterpreterGui.this, "Open Helium module", FileDialog.LOAD);
             dialog.setFilenameFilter(new ExtentionFilenameFilter(HeliumProcess.HELIUM_FILE_EXTENTION, "Helium modules"));
-            dialog.show();
+            dialog.setVisible(true);
             if (dialog.getFile() != null && dialog.getDirectory() != null)
             {
             	String fileName = dialog.getFile();
@@ -539,7 +539,7 @@ public class InterpreterGui extends AbstractInterpreterGui
                 module = locatePrelude();
                 if (module == null)
                 {
-                    displayErrorMessage("Cannot find the Prelude. The LVMPATH environment setting is\nprobably not accessible.");
+                    displayErrorMessage("Cannot find the Prelude. ");
                     return;
                 }
             }
@@ -613,7 +613,6 @@ public class InterpreterGui extends AbstractInterpreterGui
                 loadModule(getModule());
         }
     }
-
 
     protected class LoadCommand extends AbstractLoadCommand
     {

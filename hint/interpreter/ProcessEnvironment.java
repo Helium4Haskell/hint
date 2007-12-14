@@ -11,24 +11,39 @@ import java.util.*;
  * few settings that are per default present on a MS-Windows platform.
  *
  * @author  Arie Middelkoop <amiddelk@cs.uu.nl>
+ * 
+ * Some example settings for the editor and browser:
+ * For the editor:
+ *    open -a jEdit %f                                                 -- MacOSX 
+ *    \"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r                   -- Windows
+ *    
+ * For the browser:
+ *    \"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u       -- Windows
+ *    /Applications/Mozilla.app/Contents/MacOS/mozilla-bin %u         -- Use Mozilla on MacOSX
  */
 
 public class ProcessEnvironment
 {
     private static ProcessEnvironment currentEnvironment = null;
 
+    private String  basePath;
+    private String  lvmPaths;
     private String  editorCommandlineTemplate;
     private String  browserCommandlineTemplate;
     private String  additionalHeliumParameters;
     private int     fontSize;
     private boolean overloading;
+    private boolean loggingOn;
 
+    public static final String  DEFAULT_BASE_PATH                    = "/usr/local/helium/lib";
+    public static final String  DEFAULT_LVM_PATHS                    = "";
     public static final String  DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r";
     public static final String  DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
     public static final String  DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
     public static final int     DEFAULT_FONTSIZE                     = 12;
     public static final boolean DEFAULT_OVERLOADING                  = true;
-
+    public static final boolean DEFAULT_LOGGINGON                    = false;
+    
     public static final String CONFIG_FILENAME = ".hint.conf";
 
 
@@ -49,11 +64,14 @@ public class ProcessEnvironment
 
     public ProcessEnvironment()
     {
+        setBasePath(DEFAULT_BASE_PATH);
+        setLvmPaths(DEFAULT_LVM_PATHS);
         setEditorCommandlineTemplate(DEFAULT_EDITOR_COMMANDLINE_TEMPLATE);
         setBrowserCommandlineTemplate(DEFAULT_BROWSER_COMMANDLINE_TEMPLATE);
         setAdditionalHeliumParameters(DEFAULT_ADDITIONAL_HELIUM_PARAMETERS);
         setFontSize(DEFAULT_FONTSIZE);
         setOverloading(DEFAULT_OVERLOADING);
+        setLoggingOn(DEFAULT_LOGGINGON);
     }
 
 
@@ -63,11 +81,14 @@ public class ProcessEnvironment
         File configFile = new File(userHomeDirectory, CONFIG_FILENAME);
 
         Properties props = new Properties();
+        props.setProperty("basepath", getBasePath());
+        props.setProperty("lvmpaths", getLvmPaths());        
         props.setProperty("editorCommandlineTemplate",  getEditorCommandlineTemplate());
         props.setProperty("browserCommandlineTemplate", getBrowserCommandlineTemplate());
         props.setProperty("additionalHeliumParameters", getAdditionalHeliumParameters());
         props.setProperty("fontSize",                   Integer.toString(getFontSize()));
         props.setProperty("overloading",                Boolean.toString(getOverloading()));
+        props.setProperty("loggingon",                  Boolean.toString(getLoggingOn()));
 
         FileOutputStream outputStream = new FileOutputStream(configFile);
         props.store(outputStream, "Hint");
@@ -89,6 +110,12 @@ public class ProcessEnvironment
         props.load(inputStream);
         inputStream.close();
 
+        if (props.containsKey("basepath"))
+            setBasePath(props.getProperty("basepath"));
+
+        if (props.containsKey("lvmpaths"))
+            setLvmPaths(props.getProperty("lvmpaths"));
+
         if (props.containsKey("editorCommandlineTemplate"))
             setEditorCommandlineTemplate(props.getProperty("editorCommandlineTemplate"));
 
@@ -100,6 +127,8 @@ public class ProcessEnvironment
         
         if (props.containsKey("overloading"))
             setOverloading(Boolean.valueOf(props.getProperty("overloading")).booleanValue());
+        if (props.containsKey("loggingon"))
+            setLoggingOn(Boolean.valueOf(props.getProperty("loggingon")).booleanValue());
 
 		try {
 			if (props.containsKey("fontSize"))
@@ -126,13 +155,13 @@ public class ProcessEnvironment
     }
 
 
+    // Returns one string with all LVM containing directories: the base path, . and the
+    // manually added ones (by the user).
     public String getLVMEnvironmentSetting()
     {
-        String path = System.getProperty("LVMPATH");
+        // System.out.println(getBasePath());
+        String path = getBasePath();
         String simple = "simple";
-
-        if (path.endsWith(simple))
-            path = path.substring(0, path.length()-simple.length()-1);
 
         // strip off trailing path seperator
         if (path.length() >= 2 && path.endsWith(":"))
@@ -141,7 +170,7 @@ public class ProcessEnvironment
         if (!overloading)
             path = path + File.separator + simple;
 
-        return path;
+        return path+File.pathSeparator+"."+File.pathSeparator+getLvmPaths();
     }
 
 
@@ -167,6 +196,33 @@ public class ProcessEnvironment
         return path;
     }
 
+    public String getBasePath()
+    {
+        return basePath;
+    }
+
+
+    public void setBasePath(String basepath)
+    {
+        if (basepath == null)
+            throw new IllegalArgumentException("basepath is null");
+
+        basePath = basepath;
+    }
+
+    public String getLvmPaths()
+    {
+        return lvmPaths;
+    }
+
+
+    public void setLvmPaths(String lvmpaths)
+    {
+        if (lvmpaths == null)
+            throw new IllegalArgumentException("lvmpaths is null");
+
+        lvmPaths = lvmpaths;
+    }
 
     public String getEditorCommandlineTemplate()
     {
@@ -228,12 +284,24 @@ public class ProcessEnvironment
 	public boolean getOverloading()
 	{
 	    return overloading;
-    }
+  }
     
     
-    public void setOverloading(boolean b)
-    {
+  public void setOverloading(boolean b)
+  {
         overloading = b;
-    }
+  }
+
+	public boolean getLoggingOn()
+	{
+	    return loggingOn;
+  }
+  
+  
+  public void setLoggingOn(boolean b)
+  {
+      loggingOn = b;
+  }
+
 }
 
