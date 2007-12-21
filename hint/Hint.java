@@ -13,7 +13,7 @@ public class Hint
 {
     protected static void checkTempDir()
     {
-        try { ProcessEnvironment.getEnvironment().getTempPath().toURL(); }
+        try { ProcessEnvironment.getEnvironment().getTempPathDescr().toURL(); }
         catch(Throwable exception)
         {
             JOptionPane.showMessageDialog(null, "Temporary directory is not available", "Error", JOptionPane.ERROR_MESSAGE);

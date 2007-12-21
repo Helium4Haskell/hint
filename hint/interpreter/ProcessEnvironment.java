@@ -31,12 +31,14 @@ public class ProcessEnvironment
     private String  editorCommandlineTemplate;
     private String  browserCommandlineTemplate;
     private String  additionalHeliumParameters;
+    private String  tempPath;
     private int     fontSize;
     private boolean overloading;
     private boolean loggingOn;
 
-    public static final String  DEFAULT_BASE_PATH                    = "/usr/local/helium/lib";
+    public static final String  DEFAULT_BASE_PATH                    = "/usr/local/helium";
     public static final String  DEFAULT_LVM_PATHS                    = "";
+    public static final String  DEFAULT_TEMP_PATH                    = ".";
     public static final String  DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r";
     public static final String  DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
     public static final String  DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
@@ -66,6 +68,7 @@ public class ProcessEnvironment
     {
         setBasePath(DEFAULT_BASE_PATH);
         setLvmPaths(DEFAULT_LVM_PATHS);
+        setTempPath(DEFAULT_TEMP_PATH);
         setEditorCommandlineTemplate(DEFAULT_EDITOR_COMMANDLINE_TEMPLATE);
         setBrowserCommandlineTemplate(DEFAULT_BROWSER_COMMANDLINE_TEMPLATE);
         setAdditionalHeliumParameters(DEFAULT_ADDITIONAL_HELIUM_PARAMETERS);
@@ -83,6 +86,7 @@ public class ProcessEnvironment
         Properties props = new Properties();
         props.setProperty("basepath", getBasePath());
         props.setProperty("lvmpaths", getLvmPaths());        
+        props.setProperty("temppath", getTempPath());        
         props.setProperty("editorCommandlineTemplate",  getEditorCommandlineTemplate());
         props.setProperty("browserCommandlineTemplate", getBrowserCommandlineTemplate());
         props.setProperty("additionalHeliumParameters", getAdditionalHeliumParameters());
@@ -115,6 +119,9 @@ public class ProcessEnvironment
 
         if (props.containsKey("lvmpaths"))
             setLvmPaths(props.getProperty("lvmpaths"));
+
+        if (props.containsKey("temppath"))
+            setLvmPaths(props.getProperty("temppath"));
 
         if (props.containsKey("editorCommandlineTemplate"))
             setEditorCommandlineTemplate(props.getProperty("editorCommandlineTemplate"));
@@ -167,6 +174,8 @@ public class ProcessEnvironment
         if (path.length() >= 2 && path.endsWith(":"))
             path = path.substring(0, path.length()-2);
 
+        path = path + File.separator + "lib";
+        
         if (!overloading)
             path = path + File.separator + simple;
 
@@ -174,19 +183,9 @@ public class ProcessEnvironment
     }
 
 
-    public File getTempPath()
+    public File getTempPathDescr()
     {
-        String tempdir;
-
-        tempdir = System.getProperty("java.io.tmpdir");
-        if (tempdir == null)
-            tempdir = System.getProperty("TEMP");
-        if (tempdir == null)
-            tempdir = System.getProperty("TMP");
-        if (tempdir == null)
-            throw new IllegalStateException("No such TEMP environment variable");
-
-        File path = new File(tempdir);
+        File path = new File(getTempPath());
         if (!path.exists() || !path.isDirectory())
             throw new IllegalStateException("Invalid temporary directory");
 
@@ -194,6 +193,18 @@ public class ProcessEnvironment
             throw new IllegalStateException("Temporary directory not writable");
 
         return path;
+    }
+
+    public String getTempPath() {
+        return tempPath;
+    }
+    
+    public void setTempPath(String temppath)
+    {
+        if (temppath == null)
+            throw new IllegalArgumentException("temppath is null");
+
+        tempPath = temppath;
     }
 
     public String getBasePath()

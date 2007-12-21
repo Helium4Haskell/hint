@@ -7,6 +7,8 @@ import java.util.*;
 import hint.inputfilter.*;
 import hint.util.*;
 
+import hint.interpreter.ProcessEnvironment;
+
 
 /**
  * An execution of the helium compiler. The parameters are provided by the
@@ -59,11 +61,12 @@ public class HeliumProcess extends AbstractIOProcess
                        )
                    );
 
+        String heliumCommand = ProcessEnvironment.getEnvironment().getBasePath()+File.separator+"bin"+File.separator+HELIUM_COMMAND_NAME;
         Commandline heliumCommandline;
         if (parameters.getModule() != null)
-            heliumCommandline = new Commandline(HELIUM_COMMAND_NAME, parameters.getModule().getParentFile());
+            heliumCommandline = new Commandline(heliumCommand, parameters.getModule().getParentFile());
         else
-            heliumCommandline = new Commandline(HELIUM_COMMAND_NAME);
+            heliumCommandline = new Commandline(heliumCommand);
         
         String lvmPath = ProcessEnvironment.getEnvironment().getLVMEnvironmentSetting();
         heliumCommandline.addParameter("-P" + lvmPath);
@@ -114,7 +117,7 @@ public class HeliumProcess extends AbstractIOProcess
 
     protected static File createInputModule(String expression, File importModule) throws IOException
     {
-        File moduleFile = new File(ProcessEnvironment.getEnvironment().getTempPath(), HELIUM_INPUT_FILE);
+        File moduleFile = new File(ProcessEnvironment.getEnvironment().getTempPathDescr(), HELIUM_INPUT_FILE);
         moduleFile.deleteOnExit();
 
         File futureLVMFile = getLVMModuleFile(moduleFile);

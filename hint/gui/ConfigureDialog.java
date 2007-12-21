@@ -12,6 +12,7 @@ public class ConfigureDialog extends JDialog
 {
     private JTextField      basePath;
     private JTextField      lvmPaths;
+    private JTextField      tempPath;
     private JTextField      editorCommandline;
     private JTextField      browserCommandline;
     private JTextField      additionalOptions;
@@ -36,9 +37,8 @@ public class ConfigureDialog extends JDialog
 
         basePath = new JTextField(ProcessEnvironment.getEnvironment().getBasePath(), 30);
         lvmPaths  = new JTextField(ProcessEnvironment.getEnvironment().getLvmPaths(), 30);
-        JTextField tempPath = new JTextField(ProcessEnvironment.getEnvironment().getTempPath().getAbsolutePath(), 30);
+        tempPath = new JTextField(ProcessEnvironment.getEnvironment().getTempPath(), 30);
         // JTextField path     = new JTextField(ProcessEnvironment.getEnvironment().getPathEnvironmentSetting(), 30);
-        tempPath.setEditable(false);
 
         editorCommandline  = new JTextField(ProcessEnvironment.getEnvironment().getEditorCommandlineTemplate(),  30);
         browserCommandline = new JTextField(ProcessEnvironment.getEnvironment().getBrowserCommandlineTemplate(), 30);
@@ -100,6 +100,7 @@ public class ConfigureDialog extends JDialog
             
             environment.setBasePath(basePath.getText());
             environment.setLvmPaths(lvmPaths.getText());
+            environment.setTempPath(tempPath.getText());
             environment.setEditorCommandlineTemplate(editorCommandline.getText());
             environment.setBrowserCommandlineTemplate(browserCommandline.getText());
             environment.setAdditionalHeliumParameters(additionalOptions.getText());
