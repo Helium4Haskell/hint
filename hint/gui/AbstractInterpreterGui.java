@@ -196,7 +196,6 @@ abstract public class AbstractInterpreterGui extends JFrame
         return moduleFile;
     }
 
-
     protected boolean isRunningEvaluation()
     {
         return runningEvaluation;
@@ -397,6 +396,7 @@ abstract public class AbstractInterpreterGui extends JFrame
                 }
             }
 
+            // An expression has been entered, not a command.
             if (input.length() > 0)
             {
                 HeliumParameters heliumParam = new HeliumParameters();

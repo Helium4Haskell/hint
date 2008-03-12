@@ -39,7 +39,7 @@ public class ProcessEnvironment
     public static final String  DEFAULT_BASE_PATH                    = "/usr/local/helium";
     public static final String  DEFAULT_LVM_PATHS                    = "";
     public static final String  DEFAULT_TEMP_PATH                    = ".";
-    public static final String  DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r";
+    public static final String  DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" \"%f\" /g%c:%r";
     public static final String  DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
     public static final String  DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
     public static final int     DEFAULT_FONTSIZE                     = 12;

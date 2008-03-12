@@ -39,24 +39,30 @@ public class Interpreter
     private SessionManager     manager;
     private Session            currentSession;
     private MessageBroadcaster messageBroadcaster;
+    private HeliumParameters   previousHeliumParameters;
 
 
     public Interpreter()
     {
-        loadedModule       = null;
-        currentSession     = null;
-        manager            = new SessionManager();
+        loadedModule             = null;
+        currentSession           = null;
+        previousHeliumParameters = null;
+        manager                  = new SessionManager();
 
-        messageBroadcaster = new MessageBroadcaster();
+        messageBroadcaster       = new MessageBroadcaster();
     }
 
 
     public void evaluate(HeliumParameters parameters)
     {
+        previousHeliumParameters = parameters;
         new AsyncEvalRunner(parameters).start();
     }
 
-
+    public HeliumParameters getPreviousHeliumParameters () {
+        return previousHeliumParameters;
+    }
+    
     public void sendData(String data)
     {
         manager.sendData(data);

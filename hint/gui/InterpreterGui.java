@@ -441,6 +441,7 @@ public class InterpreterGui extends AbstractInterpreterGui
         Command[] commands =
             { new LoadCommand()
             , new ReloadCommand()
+            , new SpecialCommand()
             , new TypeCommand()
             , new InfoCommand()
             , new EditCommand()
@@ -594,7 +595,28 @@ public class InterpreterGui extends AbstractInterpreterGui
         }
     }
 
+    protected class SpecialCommand extends AbstractCommand
+    {
+        public SpecialCommand()
+        {
+            super(":!                  - redo the previous operation, and flag the logging");
 
+            addName(":!");
+        }
+
+
+        public void performCommand(String input)
+        {
+            HeliumParameters heliumParam = getInterpreter().getPreviousHeliumParameters();
+          
+            if (heliumParam != null) {
+                heliumParam.setSpecial();
+                getController().evaluate(heliumParam);
+            }
+        }
+    }
+
+    
     protected class ReloadCommand extends AbstractLoadCommand
     {
         public ReloadCommand()
