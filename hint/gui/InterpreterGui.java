@@ -41,10 +41,26 @@ public class InterpreterGui extends AbstractInterpreterGui
             { new LoadAction()
             , new ReloadAction()
             , new TerminateAction()
+            , new AlertAction()
             , new QuitAction()
             };
 
         return Arrays.asList(actions);
+    }
+    
+    
+    protected class AlertAction extends AbstractEvalDisabledAction
+    {
+        public AlertAction()
+        {
+            super("Alert the Helium crew about the latest compilation", "Redo the latest compile and alert the Helium crew", new HintIcon("alert.gif"));
+        }
+
+
+        public void actionPerformed(ActionEvent event)
+        {
+            getController().performCommand(":a");
+        }
     }
 
 
