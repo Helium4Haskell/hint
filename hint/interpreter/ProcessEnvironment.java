@@ -33,18 +33,28 @@ public class ProcessEnvironment
     private String  additionalHeliumParameters;
     private String  tempPath;
     private int     fontSize;
-    private boolean overloading;
+    private boolean overloadingOn;
     private boolean loggingOn;
 
-    public static final String  DEFAULT_BASE_PATH                    = "/usr/local/helium";
-    public static final String  DEFAULT_LVM_PATHS                    = "";
-    public static final String  DEFAULT_TEMP_PATH                    = ".";
-    public static final String  DEFAULT_EDITOR_COMMANDLINE_TEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" \"%f\" /g%c:%r";
-    public static final String  DEFAULT_BROWSER_COMMANDLINE_TEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
-    public static final String  DEFAULT_ADDITIONAL_HELIUM_PARAMETERS = "";
-    public static final int     DEFAULT_FONTSIZE                     = 12;
-    public static final boolean DEFAULT_OVERLOADING                  = true;
-    public static final boolean DEFAULT_LOGGINGON                    = false;
+    public static final String  DEFAULT_BASEPATH                   = "/usr/local/helium";
+    public static final String  DEFAULT_LVMPATHS                   = "";
+    public static final String  DEFAULT_TEMPPATH                   = ".";
+    public static final String  DEFAULT_EDITORCOMMANDLINETEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" \"%f\" /g%c:%r";
+    public static final String  DEFAULT_BROWSERCOMMANDLINETEMPLATE = "\"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u";
+    public static final String  DEFAULT_ADDITIONALHELIUMPARAMETERS = "";
+    public static final int     DEFAULT_FONTSIZE                   = 12;
+    public static final boolean DEFAULT_OVERLOADINGON              = true;
+    public static final boolean DEFAULT_LOGGINGON                  = false;
+    
+    public static final String  BASEPATH_KEY                   = "basepath";
+    public static final String  LVMPATHS_KEY                   = "lvmpaths";
+    public static final String  TEMPPATH_KEY                   = "temppath";
+    public static final String  EDITORCOMMANDLINETEMPLATE_KEY  = "editorcommandlinetemplate";
+    public static final String  BROWSERCOMMANDLINETEMPLATE_KEY = "browsercommandlinetemplate";
+    public static final String  ADDITIONALHELIUMPARAMETERS_KEY = "additionalheliumparameters";
+    public static final String  FONTSIZE_KEY                   = "fontsize";
+    public static final String  OVERLOADINGON_KEY              = "overloadingon";
+    public static final String  LOGGINGON_KEY                  = "loggingon";
     
     public static final String CONFIG_FILENAME = ".hint.conf";
 
@@ -66,14 +76,14 @@ public class ProcessEnvironment
 
     public ProcessEnvironment()
     {
-        setBasePath(DEFAULT_BASE_PATH);
-        setLvmPaths(DEFAULT_LVM_PATHS);
-        setTempPath(DEFAULT_TEMP_PATH);
-        setEditorCommandlineTemplate(DEFAULT_EDITOR_COMMANDLINE_TEMPLATE);
-        setBrowserCommandlineTemplate(DEFAULT_BROWSER_COMMANDLINE_TEMPLATE);
-        setAdditionalHeliumParameters(DEFAULT_ADDITIONAL_HELIUM_PARAMETERS);
+        setBasePath(DEFAULT_BASEPATH);
+        setLvmPaths(DEFAULT_LVMPATHS);
+        setTempPath(DEFAULT_TEMPPATH);
+        setEditorCommandlineTemplate(DEFAULT_EDITORCOMMANDLINETEMPLATE);
+        setBrowserCommandlineTemplate(DEFAULT_BROWSERCOMMANDLINETEMPLATE);
+        setAdditionalHeliumParameters(DEFAULT_ADDITIONALHELIUMPARAMETERS);
         setFontSize(DEFAULT_FONTSIZE);
-        setOverloading(DEFAULT_OVERLOADING);
+        setOverloading(DEFAULT_OVERLOADINGON);
         setLoggingOn(DEFAULT_LOGGINGON);
     }
 
@@ -84,15 +94,15 @@ public class ProcessEnvironment
         File configFile = new File(userHomeDirectory, CONFIG_FILENAME);
 
         Properties props = new Properties();
-        props.setProperty("basepath", getBasePath());
-        props.setProperty("lvmpaths", getLvmPaths());        
-        props.setProperty("temppath", getTempPath());        
-        props.setProperty("editorCommandlineTemplate",  getEditorCommandlineTemplate());
-        props.setProperty("browserCommandlineTemplate", getBrowserCommandlineTemplate());
-        props.setProperty("additionalHeliumParameters", getAdditionalHeliumParameters());
-        props.setProperty("fontSize",                   Integer.toString(getFontSize()));
-        props.setProperty("overloading",                Boolean.toString(getOverloading()));
-        props.setProperty("loggingon",                  Boolean.toString(getLoggingOn()));
+        props.setProperty(BASEPATH_KEY, getBasePath());
+        props.setProperty(LVMPATHS_KEY, getLvmPaths());        
+        props.setProperty(TEMPPATH_KEY, getTempPath());        
+        props.setProperty(EDITORCOMMANDLINETEMPLATE_KEY,  getEditorCommandlineTemplate());
+        props.setProperty(BROWSERCOMMANDLINETEMPLATE_KEY, getBrowserCommandlineTemplate());
+        props.setProperty(ADDITIONALHELIUMPARAMETERS_KEY, getAdditionalHeliumParameters());
+        props.setProperty(FONTSIZE_KEY, Integer.toString(getFontSize()));
+        props.setProperty(OVERLOADINGON_KEY, Boolean.toString(getOverloading()));
+        props.setProperty(LOGGINGON_KEY, Boolean.toString(getLoggingOn()));
 
         FileOutputStream outputStream = new FileOutputStream(configFile);
         props.store(outputStream, "Hint");
@@ -114,32 +124,32 @@ public class ProcessEnvironment
         props.load(inputStream);
         inputStream.close();
 
-        if (props.containsKey("basepath"))
-            setBasePath(props.getProperty("basepath"));
+        if (props.containsKey(BASEPATH_KEY))
+            setBasePath(props.getProperty(BASEPATH_KEY));
 
-        if (props.containsKey("lvmpaths"))
-            setLvmPaths(props.getProperty("lvmpaths"));
+        if (props.containsKey(LVMPATHS_KEY))
+            setLvmPaths(props.getProperty(LVMPATHS_KEY));
 
-        if (props.containsKey("temppath"))
-            setLvmPaths(props.getProperty("temppath"));
+        if (props.containsKey(TEMPPATH_KEY))
+            setTempPath(props.getProperty(TEMPPATH_KEY));
 
-        if (props.containsKey("editorCommandlineTemplate"))
-            setEditorCommandlineTemplate(props.getProperty("editorCommandlineTemplate"));
+        if (props.containsKey(EDITORCOMMANDLINETEMPLATE_KEY))
+            setEditorCommandlineTemplate(props.getProperty(EDITORCOMMANDLINETEMPLATE_KEY));
 
-        if (props.containsKey("browserCommandlineTemplate"))
-            setBrowserCommandlineTemplate(props.getProperty("browserCommandlineTemplate"));
+        if (props.containsKey(BROWSERCOMMANDLINETEMPLATE_KEY))
+            setBrowserCommandlineTemplate(props.getProperty(BROWSERCOMMANDLINETEMPLATE_KEY));
 
-        if (props.containsKey("additionalHeliumParameters"))
-            setAdditionalHeliumParameters(props.getProperty("additionalHeliumParameters"));
+        if (props.containsKey(ADDITIONALHELIUMPARAMETERS_KEY))
+            setAdditionalHeliumParameters(props.getProperty(ADDITIONALHELIUMPARAMETERS_KEY));
         
-        if (props.containsKey("overloading"))
-            setOverloading(Boolean.valueOf(props.getProperty("overloading")).booleanValue());
-        if (props.containsKey("loggingon"))
-            setLoggingOn(Boolean.valueOf(props.getProperty("loggingon")).booleanValue());
+        if (props.containsKey(OVERLOADINGON_KEY))
+            setOverloading(Boolean.valueOf(props.getProperty(OVERLOADINGON_KEY)).booleanValue());
+        if (props.containsKey(LOGGINGON_KEY))
+            setLoggingOn(Boolean.valueOf(props.getProperty(LOGGINGON_KEY)).booleanValue());
 
 		try {
-			if (props.containsKey("fontSize"))
-				setFontSize(Integer.parseInt(props.getProperty("fontSize")));
+			if (props.containsKey(FONTSIZE_KEY))
+				setFontSize(Integer.parseInt(props.getProperty(FONTSIZE_KEY)));
 		} catch (NumberFormatException e) {}
 
     }
@@ -176,7 +186,7 @@ public class ProcessEnvironment
 
         path = path + File.separator + "lib";
         
-        if (!overloading)
+        if (!overloadingOn)
             path = path + File.separator + simple;
 
         return path+File.pathSeparator+"."+File.pathSeparator+getLvmPaths();
@@ -294,13 +304,13 @@ public class ProcessEnvironment
 	
 	public boolean getOverloading()
 	{
-	    return overloading;
+	    return overloadingOn;
   }
     
     
   public void setOverloading(boolean b)
   {
-        overloading = b;
+        overloadingOn = b;
   }
 
 	public boolean getLoggingOn()
