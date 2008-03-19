@@ -395,6 +395,13 @@ abstract public class AbstractInterpreterGui extends JFrame
                     return;
                 }
             }
+            
+            // looks like a command, but none of the commands matched
+            if (input.startsWith(":"))
+            {
+                JOptionPane.showMessageDialog(AbstractInterpreterGui.this, "Unknown command: " + input, "Invalid input", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             // An expression has been entered, not a command.
             if (input.length() > 0)
