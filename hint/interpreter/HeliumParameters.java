@@ -18,7 +18,7 @@ public class HeliumParameters
     private File    module;
     private boolean evaluateExpressionType;
     private boolean compileOnly;
-    private boolean special;
+    private boolean alert;
 
     public HeliumParameters()
     {
@@ -26,7 +26,7 @@ public class HeliumParameters
         module      = null;
         evaluateExpressionType = false;
         compileOnly            = false;
-        special                = false;
+        alert                  = false;
     }
 
 
@@ -61,14 +61,14 @@ public class HeliumParameters
         compileOnly = true;
     }
 
-    public void setSpecial()
+    public void setAlert()
     {
-        special = true;
+        alert = true;
     }
 
-    public boolean isSpecial()
+    public boolean isAlert()
     {
-        return special;
+        return alert;
     }
 
     public String getExpression()

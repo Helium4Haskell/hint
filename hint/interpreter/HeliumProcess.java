@@ -84,7 +84,7 @@ public class HeliumProcess extends AbstractIOProcess
         if (parameters.evaluateExpressionType())
             heliumCommandline.addParameter("--dump-information");
 
-        if (parameters.isSpecial()) {
+        if (parameters.isAlert()) {
             heliumCommandline.addParameter("-!");
             heliumCommandline.addParameter("-B");
             heliumCommandline.addParameter("--enable-logging");

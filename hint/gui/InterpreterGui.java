@@ -54,6 +54,7 @@ public class InterpreterGui extends AbstractInterpreterGui
         public AlertAction()
         {
             super("Alert the Helium crew about the latest compilation", "Redo the latest compile and alert the Helium crew", new HintIcon("alert.gif"));
+            putValue(AbstractAction.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK));
         }
 
 
@@ -457,7 +458,7 @@ public class InterpreterGui extends AbstractInterpreterGui
         Command[] commands =
             { new LoadCommand()
             , new ReloadCommand()
-            , new SpecialCommand()
+            , new AlertCommand()
             , new TypeCommand()
             , new InfoCommand()
             , new EditCommand()
@@ -611,13 +612,13 @@ public class InterpreterGui extends AbstractInterpreterGui
         }
     }
 
-    protected class SpecialCommand extends AbstractCommand
+    protected class AlertCommand extends AbstractCommand
     {
-        public SpecialCommand()
+        public AlertCommand()
         {
-            super(":!                  - redo the previous operation, and flag the logging");
+            super(":a                  - redo the previous operation, and flag the logging");
 
-            addName(":!");
+            addName(":a");
         }
 
 
@@ -626,7 +627,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             HeliumParameters heliumParam = getInterpreter().getPreviousHeliumParameters();
           
             if (heliumParam != null) {
-                heliumParam.setSpecial();
+                heliumParam.setAlert();
                 getController().evaluate(heliumParam);
             }
         }
