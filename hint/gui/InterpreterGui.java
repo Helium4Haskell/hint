@@ -119,7 +119,7 @@ public class InterpreterGui extends AbstractInterpreterGui
         public void actionPerformed(ActionEvent event)
         {
             FileDialog dialog = new FileDialog(InterpreterGui.this, "Open Helium module", FileDialog.LOAD);
-            dialog.setFilenameFilter(new ExtentionFilenameFilter(HeliumProcess.HELIUM_FILE_EXTENSION, "Helium modules"));
+            dialog.setFilenameFilter(new ExtensionFilenameFilter(HeliumProcess.HELIUM_FILE_EXTENSION, "Helium modules"));
             dialog.setVisible(true);
             if (dialog.getFile() != null && dialog.getDirectory() != null)
             {

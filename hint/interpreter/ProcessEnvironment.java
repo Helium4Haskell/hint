@@ -14,12 +14,6 @@ import java.util.*;
  * 
  * Some example settings for the editor and browser:
  * 
- * The way the following commands are called is now via sh -c. It remains to be 
- * seen whether this also works on Windows. If not, then we may need to include
- * an additional of some kind to indicate whether a shell is present. Seems
- * Windows does not need the shell anyway. It seems that the fact that it does is something
- * of an accident. An alternative is to put the sh -c before the remainder and to peel
- * it off, if it is there. Of om een vlag te hebben die Windows/Unix selecteert.
  *
  * For the editor:
  *
