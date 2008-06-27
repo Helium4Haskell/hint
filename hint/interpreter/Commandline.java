@@ -4,6 +4,7 @@ package hint.interpreter;
 import java.util.*;
 import java.io.*;
 
+import hint.util.*;
 
 /**
  * Abstraction of the commandline that can be used as input for the
@@ -40,11 +41,17 @@ public class Commandline
     }
 
 
-    public void addParameters(String parameters)
+    public void addParameters(String parameter)
     {
+        String [] parameters = Utils.prepareForExec(parameter);
+        for (int i=0; i<parameters.length; i++) {
+            addParameter(parameters[i]);
+        }
+/* The old way:
         StringTokenizer tokenizer = new StringTokenizer(parameters);
         while(tokenizer.hasMoreTokens())
             addParameter(tokenizer.nextToken());
+*/
     }
 
 

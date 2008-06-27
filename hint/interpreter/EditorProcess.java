@@ -7,7 +7,6 @@ import javax.swing.*;
 import hint.interpreter.*;
 import hint.util.*;
 
-
 public class EditorProcess
 {
     public EditorProcess(File file, int row, int column) throws IOException
@@ -25,8 +24,10 @@ public class EditorProcess
                 file.getAbsolutePath() /* file.getName()*/, row, column);
         if (commandline.trim().equals(""))
             throw new IOException("empty commandline");
-
-        Runtime.getRuntime().exec(commandline, null); //, file.getParentFile());
+        // else System.out.println(commandline);
+ 
+        String [] command = Utils.prepareForExec(commandline);
+        Runtime.getRuntime().exec(command, null); //, file.getParentFile());
     }
 
 
@@ -55,7 +56,7 @@ public class EditorProcess
                         break;
 
                     case 'f':
-                        // output.append("\"");
+                        // output.append("\""); // Not only seems unnecessary but it won't work otherwise. I guess Java deals with this in some way.
                         output.append(filename);
                         // output.append("\"");
                         break;

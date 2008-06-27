@@ -5,20 +5,20 @@ import java.awt.*;
 import java.io.*;
 
 
-public class ExtentionFilenameFilter extends javax.swing.filechooser.FileFilter implements FilenameFilter, FileFilter
+public class ExtensionFilenameFilter extends javax.swing.filechooser.FileFilter implements FilenameFilter, FileFilter
 {
-    private String extention;
+    private String extension;
     private String description;
 
 
-    public ExtentionFilenameFilter(String extention, String description)
+    public ExtensionFilenameFilter(String extension, String description)
     {
-        if (extention == null)
-            throw new IllegalArgumentException("extention is null");
+        if (extension == null)
+            throw new IllegalArgumentException("extension is null");
         if (description == null)
             throw new IllegalArgumentException("description is null");
 
-        this.extention   = extention;
+        this.extension   = extension;
         this.description = description;
     }
 
@@ -39,12 +39,12 @@ public class ExtentionFilenameFilter extends javax.swing.filechooser.FileFilter 
         if (dir == null || name == null)
             return false;
 
-        return name.toLowerCase().endsWith(extention);
+        return name.toLowerCase().endsWith(extension);
     }
 
 
     public String getDescription()
     {
-        return description + " ("+extention+")";
+        return description + " ("+extension+")";
     }
 }

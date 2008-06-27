@@ -10,16 +10,38 @@ import java.util.*;
  * environment that is provided by the operating system and specifies a
  * few settings that are per default present on a MS-Windows platform.
  *
- * @author  Arie Middelkoop <amiddelk@cs.uu.nl>
+ * @author  Arie Middelkoop <amiddelk@cs.uu.nl> and Jurriaan Hage <jur@cs.uu.nl>
  * 
  * Some example settings for the editor and browser:
+ * 
+ * The way the following commands are called is now via sh -c. It remains to be 
+ * seen whether this also works on Windows. If not, then we may need to include
+ * an additional of some kind to indicate whether a shell is present. Seems
+ * Windows does not need the shell anyway. It seems that the fact that it does is something
+ * of an accident. An alternative is to put the sh -c before the remainder and to peel
+ * it off, if it is there. Of om een vlag te hebben die Windows/Unix selecteert.
+ *
  * For the editor:
- *    open -a jEdit %f                                                 -- MacOSX 
- *    \"C:\\apps\\ConTEXT\\ConTEXT.exe\" %f /g%c:%r                   -- Windows
- *    
+ *
+ *    C:\\apps\\ConTEXT\\ConTEXT.exe %f /g%c:%r                   -- Windows, should be tested
+ *   On MacOSX, tested on Leopard, some on Tiger:
+ *      open -a jEdit %f
+ *      open -a TextEdit %f
+ *   or java -jar /Applications/jEdit\ 4.2/jedit.jar -reuseview -- %f +line:%c
+ *      open -a XCode %f
+ *      open -a BBEdit %f
+ *   or bbedit +%r %f if you want it to jump to lines and have the command line versions of BBEdit installed. 
+ * I guess you get the picture. With open you can not add line indicators to jump to. Too bad.
+ * Then you need a separate Linux/Unix style command, like bbedit and the direct access to jEdit has, and obviously,
+ * it must be able to understand line jump indicators.
+ *
  * For the browser:
- *    \"C:\\Program Files\\Internet Explorer\\iexplore.exe\" %u       -- Windows
- *    /Applications/Mozilla.app/Contents/MacOS/mozilla-bin %u         -- Use Mozilla on MacOSX
+ *    C:\\Program Files\\Internet\ Explorer\\iexplore.exe %u       -- Windows
+ *    On MacOSX, all tested on Leopard, some also tested on Tiger: 
+ *      open -a Mozilla %u         
+ *      open -a Safari %u
+ *      open -a Firefox %u
+ *      open -a Netscape %u
  */
 
 public class ProcessEnvironment
@@ -35,7 +57,9 @@ public class ProcessEnvironment
     private int     fontSize;
     private boolean overloadingOn;
     private boolean loggingOn;
-
+    private String  host;
+    private int     port;
+    
     public static final String  DEFAULT_BASEPATH                   = "/usr/local/helium";
     public static final String  DEFAULT_LVMPATHS                   = "";
     public static final String  DEFAULT_TEMPPATH                   = ".";
@@ -45,6 +69,8 @@ public class ProcessEnvironment
     public static final int     DEFAULT_FONTSIZE                   = 12;
     public static final boolean DEFAULT_OVERLOADINGON              = true;
     public static final boolean DEFAULT_LOGGINGON                  = false;
+    public static final String  DEFAULT_HOST                       = "helium.zoo.cs.uu.nl";
+    public static final int     DEFAULT_PORT                       = 5010;
     
     public static final String  BASEPATH_KEY                   = "basepath";
     public static final String  LVMPATHS_KEY                   = "lvmpaths";
@@ -55,6 +81,9 @@ public class ProcessEnvironment
     public static final String  FONTSIZE_KEY                   = "fontsize";
     public static final String  OVERLOADINGON_KEY              = "overloadingon";
     public static final String  LOGGINGON_KEY                  = "loggingon";
+    public static final String  HOST_KEY                       = "host";
+    public static final String  PORT_KEY                       = "port";
+    
     
     public static final String CONFIG_FILENAME = ".hint.conf";
 
@@ -73,7 +102,6 @@ public class ProcessEnvironment
         currentEnvironment = context;
     }
 
-
     public ProcessEnvironment()
     {
         setBasePath(DEFAULT_BASEPATH);
@@ -85,6 +113,8 @@ public class ProcessEnvironment
         setFontSize(DEFAULT_FONTSIZE);
         setOverloading(DEFAULT_OVERLOADINGON);
         setLoggingOn(DEFAULT_LOGGINGON);
+        setHost(DEFAULT_HOST);
+        setPort(DEFAULT_PORT);
     }
 
 
@@ -103,6 +133,8 @@ public class ProcessEnvironment
         props.setProperty(FONTSIZE_KEY, Integer.toString(getFontSize()));
         props.setProperty(OVERLOADINGON_KEY, Boolean.toString(getOverloading()));
         props.setProperty(LOGGINGON_KEY, Boolean.toString(getLoggingOn()));
+        props.setProperty(HOST_KEY, getHost());        
+        props.setProperty(PORT_KEY, Integer.toString(getPort()));
 
         FileOutputStream outputStream = new FileOutputStream(configFile);
         props.store(outputStream, "Hint");
@@ -144,12 +176,20 @@ public class ProcessEnvironment
         
         if (props.containsKey(OVERLOADINGON_KEY))
             setOverloading(Boolean.valueOf(props.getProperty(OVERLOADINGON_KEY)).booleanValue());
+        
         if (props.containsKey(LOGGINGON_KEY))
             setLoggingOn(Boolean.valueOf(props.getProperty(LOGGINGON_KEY)).booleanValue());
+
+        if (props.containsKey(HOST_KEY))
+            setHost(props.getProperty(HOST_KEY));
 
 		try {
 			if (props.containsKey(FONTSIZE_KEY))
 				setFontSize(Integer.parseInt(props.getProperty(FONTSIZE_KEY)));
+		} catch (NumberFormatException e) {}
+		try {
+			if (props.containsKey(PORT_KEY))
+				setPort(Integer.parseInt(props.getProperty(PORT_KEY)));
 		} catch (NumberFormatException e) {}
 
     }
@@ -289,40 +329,64 @@ public class ProcessEnvironment
         additionalHeliumParameters = parameters;
     }
 
+    public String getHost()
+    {
+        return host;
+    }
+
+
+    public void setHost(String parameters)
+    {
+        if (parameters == null)
+            throw new IllegalArgumentException("parameters is null");
+
+        host = parameters;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public void setPort(int newPort)
+  	{
+        port = newPort;
+	  }
+
     public int getFontSize()
     {
         return fontSize;
     }
 
     public void setFontSize(int newSize)
-	{
-		if (newSize > 40) newSize = 40;
-		if (newSize < 10) newSize = 10;
-		fontSize = newSize;
-	}
+  	{
+	  	if (newSize > 40) newSize = 40;
+		  if (newSize < 10) newSize = 10;
+		  fontSize = newSize;
+	  }
 	
-	
-	public boolean getOverloading()
-	{
-	    return overloadingOn;
-  }
+    
+    public boolean getOverloading()
+    {
+        return overloadingOn;
+    }
+      
+      
+    public void setOverloading(boolean b)
+    {
+          overloadingOn = b;
+    }
+    
+    public boolean getLoggingOn()
+    {
+        return loggingOn;
+    }
     
     
-  public void setOverloading(boolean b)
-  {
-        overloadingOn = b;
-  }
-
-	public boolean getLoggingOn()
-	{
-	    return loggingOn;
-  }
-  
-  
-  public void setLoggingOn(boolean b)
-  {
-      loggingOn = b;
-  }
+    public void setLoggingOn(boolean b)
+    {
+        loggingOn = b;
+    }
 
 }
 

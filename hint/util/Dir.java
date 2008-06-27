@@ -8,7 +8,7 @@ import java.util.*;
 /**
  * This class provides some utility functions on directories. Currently, it
  * only contains a function that will copy a directory one directory
- * recursivly to another, copying files only when required (if the modified
+ * recursively to another, copying files only when required (if the modified
  * time is older than that of the origional).
  *
  * @author  Arie Middelkoop <amiddelk@cs.uu.nl>
@@ -21,13 +21,13 @@ public class Dir
     public static final int BUFFER_SIZE = 131072;
 
 
-    public static String stripFileExtention(String filename, String extention)
+    public static String stripFileExtension(String filename, String extension)
     {
-        int extentionStart = filename.lastIndexOf(extention);
-        if (extentionStart < 0)
+        int extensionStart = filename.lastIndexOf(extension);
+        if (extensionStart < 0)
             return filename;
 
-        return filename.substring(0, extentionStart);
+        return filename.substring(0, extensionStart);
     }
 
 

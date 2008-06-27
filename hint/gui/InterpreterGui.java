@@ -4,6 +4,7 @@ package hint.gui;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
+import java.lang.Character;
 import java.util.*;
 import java.util.List;
 import javax.swing.*;
@@ -18,11 +19,12 @@ import hint.util.*;
 
 public class InterpreterGui extends AbstractInterpreterGui
 {
+    private static final String webpage = "http://www.cs.uu.nl/wiki/bin/view/Helium";
+    
     protected Prompt createPrompt()
     {
         return new Prompt();
     }
-
 
     protected InterpreterTextPane createTextPane()
     {
@@ -99,7 +101,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 			if (!(firstChar >= 'A' && firstChar <= 'Z')) 
 			{
 				return "File name must start with upper-case letter";
-		    }
+		  }
 		    // all isAlphaNum
 			for (int i = 0; i < fileName.length(); i++) 
 			{
@@ -117,7 +119,7 @@ public class InterpreterGui extends AbstractInterpreterGui
         public void actionPerformed(ActionEvent event)
         {
             FileDialog dialog = new FileDialog(InterpreterGui.this, "Open Helium module", FileDialog.LOAD);
-            dialog.setFilenameFilter(new ExtentionFilenameFilter(HeliumProcess.HELIUM_FILE_EXTENTION, "Helium modules"));
+            dialog.setFilenameFilter(new ExtentionFilenameFilter(HeliumProcess.HELIUM_FILE_EXTENSION, "Helium modules"));
             dialog.setVisible(true);
             if (dialog.getFile() != null && dialog.getDirectory() != null)
             {
@@ -360,14 +362,14 @@ public class InterpreterGui extends AbstractInterpreterGui
     {
         public UserManualAction()
         {
-            super("User manual", "Displays online user manual", new HintIcon("globe.gif"));
+            super("The Hint User manual", "Displays online Hint user manual", new HintIcon("globe.gif"));
             putValue(AbstractAction.MNEMONIC_KEY, new Integer(KeyEvent.VK_M));
         }
 
 
         public void actionPerformed(ActionEvent event)
         {
-            try { new BrowserProcess("http://www.cs.uu.nl/helium/docs/HintUserManual.html"); }
+            try { new BrowserProcess(webpage + "/TheHintUserManual"); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
     }
@@ -401,7 +403,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 
         public void actionPerformed(ActionEvent event)
         {
-            try { new BrowserProcess("http://www.cs.uu.nl/helium/"); }
+            try { new BrowserProcess(webpage); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
     }
@@ -437,7 +439,8 @@ public class InterpreterGui extends AbstractInterpreterGui
             JOptionPane.showMessageDialog( InterpreterGui.this
                                          , "Hint - Helium Interpreter"
                                            + "\nArie Middelkoop, 2003"
-                                           + "\nhttp://www.cs.uu.nl/helium/"
+                                           + "\n"
+                                           + webpage
                                            + "\n"
                                            + "\nReport bugs and suggestions to:"
                                            + "\n  helium@cs.uu.nl"
@@ -483,14 +486,23 @@ public class InterpreterGui extends AbstractInterpreterGui
         }
 
 
+        private String preludeNormalized(String s) {
+          if ((s != null) && (s.length() > 0)) { 
+            char first = s.charAt(0);
+            return ""+ Character.toUpperCase(first) + s.substring(1).toLowerCase() + "Prelude";
+          }
+          else
+            return s;
+        }
+        
         public void performCommand(String input)
         {
             String functionname = input.trim();
 
-            if (functionname.equals("*"))
+            if (functionname.equals("*")) // TODO WE NEED MORE, OR DON'T WE?
                 functionname = "mul";
 
-            try { new BrowserProcess("http://www.cs.uu.nl/helium/docs/TourOfPrelude.html#"+functionname); }
+            try { new BrowserProcess(webpage + "/ATourOfTheHeliumPrelude#"+preludeNormalized(functionname)); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
 
@@ -577,7 +589,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             while(tokenizer.hasMoreTokens())
             {
                 String path = tokenizer.nextToken();
-                File module = new File(path, "Prelude" + HeliumProcess.HELIUM_FILE_EXTENTION);
+                File module = new File(path, "Prelude" + HeliumProcess.HELIUM_FILE_EXTENSION);
 
                 if (module != null && module.exists() && module.isFile() && module.canRead())
                     return module;
@@ -592,7 +604,7 @@ public class InterpreterGui extends AbstractInterpreterGui
     {
         public TypeCommand()
         {
-            super(":type               - print of the expression");
+            super(":type               - print type of the expression");
 
             addName(":t");
             addName(":type");
@@ -616,9 +628,10 @@ public class InterpreterGui extends AbstractInterpreterGui
     {
         public AlertCommand()
         {
-            super(":a                  - redo the previous operation, and flag the logging");
+            super(":alert [message]    - alert to previous compile (message optional)");
 
             addName(":a");
+            addName(":alert");
         }
 
 
@@ -627,7 +640,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             HeliumParameters heliumParam = getInterpreter().getPreviousHeliumParameters();
           
             if (heliumParam != null) {
-                heliumParam.setAlert();
+                heliumParam.setAlert(input.trim());
                 getController().evaluate(heliumParam);
             }
         }
@@ -661,7 +674,7 @@ public class InterpreterGui extends AbstractInterpreterGui
 
             addName(":l");
             addName(":load");
-            addName(":open");
+            // addName(":open");
             addName(":module");
         }
 
@@ -678,8 +691,8 @@ public class InterpreterGui extends AbstractInterpreterGui
             }
             else
             {
-                if (!moduleName.toLowerCase().endsWith(HeliumProcess.HELIUM_FILE_EXTENTION))
-                    moduleName += HeliumProcess.HELIUM_FILE_EXTENTION;
+                if (!moduleName.toLowerCase().endsWith(HeliumProcess.HELIUM_FILE_EXTENSION))
+                    moduleName += HeliumProcess.HELIUM_FILE_EXTENSION;
 
                 modulePath = new File(moduleName);
             }
@@ -727,9 +740,9 @@ public class InterpreterGui extends AbstractInterpreterGui
             super(":quit               - exit the interpreter");
 
             addName(":q");
-            addName(":x");
+            // addName(":x");
             addName(":quit");
-            addName(":exit");
+            // addName(":exit");
         }
 
 
@@ -744,13 +757,12 @@ public class InterpreterGui extends AbstractInterpreterGui
     {
         public HelpCommand()
         {
-            super(":help               - shows available commands");
+            super(":help, :?           - shows available commands");
 
             addName(":?");
             addName(":h");
             addName(":help");
         }
-
 
         public void performCommand(String input)
         {
@@ -773,7 +785,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             super(":clear              - clears the screen");
 
             addName(":clear");
-            addName(":cls");
+            // addName(":cls");
             addName(":c");
         }
 

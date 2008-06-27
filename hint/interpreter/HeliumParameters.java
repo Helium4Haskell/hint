@@ -15,6 +15,7 @@ import java.io.*;
 public class HeliumParameters
 {
     private String  expression;
+    private String  alertMessage;
     private File    module;
     private boolean evaluateExpressionType;
     private boolean compileOnly;
@@ -22,8 +23,9 @@ public class HeliumParameters
 
     public HeliumParameters()
     {
-        expression  = "()";
-        module      = null;
+        expression   = "()";
+        alertMessage = "";
+        module       = null;
         evaluateExpressionType = false;
         compileOnly            = false;
         alert                  = false;
@@ -61,9 +63,10 @@ public class HeliumParameters
         compileOnly = true;
     }
 
-    public void setAlert()
+    public void setAlert(String message)
     {
         alert = true;
+        alertMessage = message;
     }
 
     public boolean isAlert()
@@ -71,6 +74,10 @@ public class HeliumParameters
         return alert;
     }
 
+    public String getAlertMessage() {
+        return alertMessage;
+    }
+    
     public String getExpression()
     {
         return expression;

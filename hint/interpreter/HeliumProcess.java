@@ -28,9 +28,9 @@ public class HeliumProcess extends AbstractIOProcess
     public static final String MAIN_FUNCTION         = "interpreter_main";
     public static final String HELIUM_INPUT_MODULE   = "Interpreter";
     public static final String HELIUM_COMMAND_NAME   = "helium";
-    public static final String HELIUM_FILE_EXTENTION = ".hs";
-    public static final String LVM_FILE_EXTENTION    = ".lvm";
-    public static final String HELIUM_INPUT_FILE     = HELIUM_INPUT_MODULE + HELIUM_FILE_EXTENTION;
+    public static final String HELIUM_FILE_EXTENSION = ".hs";
+    public static final String LVM_FILE_EXTENSION    = ".lvm";
+    public static final String HELIUM_INPUT_FILE     = HELIUM_INPUT_MODULE + HELIUM_FILE_EXTENSION;
     public static final String MODULE_HEADER         = "module "+HELIUM_INPUT_MODULE+" where";
 
     private File inputModule;
@@ -76,20 +76,26 @@ public class HeliumProcess extends AbstractIOProcess
         else
             heliumCommandline.addParameter("--no-overloading");
 
-        if (ProcessEnvironment.getEnvironment().getLoggingOn())
-            heliumCommandline.addParameter("--enable-logging");
-        else
-            heliumCommandline.addParameter("--disable-logging");
 
         if (parameters.evaluateExpressionType())
             heliumCommandline.addParameter("--dump-information");
 
         if (parameters.isAlert()) {
-            heliumCommandline.addParameter("--alert");
-            heliumCommandline.addParameter("-B");
-            heliumCommandline.addParameter("--enable-logging");
+            heliumCommandline.addParameter("--alert=" + parameters.getAlertMessage());
+            heliumCommandline.addParameter("-b");
+            heliumCommandline.addParameter("--enable-logging");            
         }
-        
+        else // Only necessary if alert is not on:
+            if (ProcessEnvironment.getEnvironment().getLoggingOn()) 
+                heliumCommandline.addParameter("--enable-logging");
+            else
+                heliumCommandline.addParameter("--disable-logging");
+
+        if (parameters.isAlert() || ProcessEnvironment.getEnvironment().getLoggingOn()) { // If logging enabled send along settings
+            heliumCommandline.addParameter("--host=" + ProcessEnvironment.getEnvironment().getHost());
+            heliumCommandline.addParameter("--port=" + ProcessEnvironment.getEnvironment().getPort());            
+        }
+            
         heliumCommandline.addParameters(ProcessEnvironment.getEnvironment().getAdditionalHeliumParameters());
         heliumCommandline.addParameter(inputModule.getAbsolutePath());
 
@@ -117,7 +123,7 @@ public class HeliumProcess extends AbstractIOProcess
     public static File getLVMModuleFile(File inputModule)
     {
         File directory = inputModule.getParentFile();
-        return new File(directory, Dir.stripFileExtention(inputModule.getName(), HELIUM_FILE_EXTENTION) + LVM_FILE_EXTENTION);
+        return new File(directory, Dir.stripFileExtension(inputModule.getName(), HELIUM_FILE_EXTENSION) + LVM_FILE_EXTENSION);
     }
 
 
@@ -135,7 +141,7 @@ public class HeliumProcess extends AbstractIOProcess
         module.println(MODULE_HEADER);
 
         if (importModule != null)
-            module.println("import "+Dir.stripFileExtention(importModule.getName(), HELIUM_FILE_EXTENTION));
+            module.println("import "+Dir.stripFileExtension(importModule.getName(), HELIUM_FILE_EXTENSION));
 
         module.println(MAIN_FUNCTION + " = " + addIndent(expression));
         module.flush();

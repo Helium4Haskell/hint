@@ -180,7 +180,7 @@ abstract public class AbstractInterpreterGui extends JFrame
 
         if (moduleFile != null)
         {
-            prompt.setModuleName(Dir.stripFileExtention(moduleFile.getName(), HeliumProcess.HELIUM_FILE_EXTENTION));
+            prompt.setModuleName(Dir.stripFileExtension(moduleFile.getName(), HeliumProcess.HELIUM_FILE_EXTENSION));
             setTitle(moduleFile.getName());
         }
         else

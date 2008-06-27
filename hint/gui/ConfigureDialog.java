@@ -17,6 +17,8 @@ public class ConfigureDialog extends JDialog
     private JTextField      browserCommandline;
     private JTextField      additionalOptions;
     private JTextField      fontSize;
+    private JTextField      host;
+    private JTextField      port;
     private JCheckBox       overloading;
     private JCheckBox       loggingOn;
 
@@ -46,6 +48,8 @@ public class ConfigureDialog extends JDialog
         fontSize           = new JTextField(Integer.toString(ProcessEnvironment.getEnvironment().getFontSize()), 30);
         overloading        = new JCheckBox(" ", ProcessEnvironment.getEnvironment().getOverloading());
         loggingOn          = new JCheckBox(" ", ProcessEnvironment.getEnvironment().getLoggingOn());
+        host               = new JTextField(ProcessEnvironment.getEnvironment().getHost(), 30);
+        port               = new JTextField(Integer.toString(ProcessEnvironment.getEnvironment().getPort()), 30);
 
         layoutConstraints.anchor = GridBagConstraints.WEST;
 
@@ -57,6 +61,8 @@ public class ConfigureDialog extends JDialog
         add(" Font size: ", fontSize);
         add(" Enable overloading: ", overloading);
         add(" Enable logging: ", loggingOn);
+        add(" Host logging server: ", host);
+        add(" Port logging server: ", port);
         add(" TEMP: ", tempPath);
         // add(" PATH: ", path);
 
@@ -112,6 +118,12 @@ public class ConfigureDialog extends JDialog
             environment.setLoggingOn(loggingOn.isSelected());
             try {
             	environment.setFontSize(Integer.parseInt(fontSize.getText()));
+            } catch (NumberFormatException e) {}
+            
+            environment.setHost(host.getText());
+            
+            try {
+            	environment.setPort(Integer.parseInt(port.getText()));
             } catch (NumberFormatException e) {}
 
             try

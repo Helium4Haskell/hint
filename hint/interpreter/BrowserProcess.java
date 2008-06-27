@@ -14,7 +14,13 @@ public class BrowserProcess
     {
         String commandline = createCommandline(ProcessEnvironment.getEnvironment().getBrowserCommandlineTemplate(), url);
         // System.out.println ("Executing: " + commandline);
-        Runtime.getRuntime().exec(commandline);
+        // String[] command = {"sh","-c",commandline};
+        
+        // The regular expression uses negative lookbehind to match only
+        // those spaces that are not preceded by a \
+        // Note the double quotation of the slashback: one for java strings, one for regexps.
+        String [] command = Utils.prepareForExec(commandline);
+        Runtime.getRuntime().exec(command);
     }
 
 
