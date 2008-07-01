@@ -20,14 +20,19 @@ import java.util.*;
  *    C:\\apps\\ConTEXT\\ConTEXT.exe %f /g%c:%r                   -- Windows, should be tested
  *   On MacOSX, tested on Leopard, some on Tiger:
  *      open -a jEdit %f
- *      open -a TextEdit %f
- *   or java -jar /Applications/jEdit\ 4.2/jedit.jar -reuseview -- %f +line:%c
- *      open -a XCode %f
+ *   or java -jar /Applications/jEdit\ 4.2/jedit.jar -reuseview -- %f +line:%r
+ *
  *      open -a BBEdit %f
  *   or bbedit +%r %f if you want it to jump to lines and have the command line versions of BBEdit installed. 
- * I guess you get the picture. With open you can not add line indicators to jump to. Too bad.
- * Then you need a separate Linux/Unix style command, like bbedit and the direct access to jEdit has, and obviously,
- * it must be able to understand line jump indicators.
+ *
+ *      open -a TextEdit %f
+ *      open -a XCode %f
+ *      open -a Aquamacs\ Emacs %f
+ *   or /Applications/Aquamacs\ Emacs.app/Contents/MacOS/Aquamacs\ Emacs +%r:%c %f
+ *
+ * With open you can not add line indicators to jump to. Too bad.
+ * Then you need a separate Linux/Unix style command, like bbedit or the direct access to jEdit and Aquamacs\ Emacs, 
+ * and obviously, those must be able to understand line jump indicators (but they usually do).
  *
  * For the browser:
  *    C:\\Program Files\\Internet\ Explorer\\iexplore.exe %u       -- Windows

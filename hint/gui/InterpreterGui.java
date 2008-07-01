@@ -494,6 +494,21 @@ public class InterpreterGui extends AbstractInterpreterGui
           else
             return s;
         }
+
+        private String handleOperators(String s) {
+          String [][] opsToText = 
+          {{"&&", "Opand"}, {"||", "Opor"},
+           {"*","Mul"}, {"/", "Opdiv"}, {"+", "Add"}, {"-", "Sub"}, {"^", "Hat"},
+           {"/=", "Ne"}, {"==", "Eq"}, {"<", "Lt"}, {"<=", "Le"}, {">", "Gt"}, {">=", "Ge"},
+           {"*.","Mulflt"}, {"/.", "Opdivflt"}, {"+.", "Addflt"}, {"-.", "Subflt"}, {"^.", "Powflt"}, {"/=.", "Neflt"},
+           {"==.", "Eqflt"}, {"<.", "Ltflt"}, {"<=.", "Leflt"}, {">.", "Gtflt"}, {">=.", "Geflt"}, {"**.", "Starstar"},
+           {"!!", "Index"}, {":", "Cons"}, {"++", "Append"}, {".", "Compose"}};
+
+           for (int i=0; i < opsToText.length; i++)
+             if (s.equals(opsToText[i][0]))
+                return opsToText[i][1];             
+           return s;
+        }
         
         public void performCommand(String input)
         {
@@ -502,7 +517,7 @@ public class InterpreterGui extends AbstractInterpreterGui
             if (functionname.equals("*")) // TODO WE NEED MORE, OR DON'T WE?
                 functionname = "mul";
 
-            try { new BrowserProcess(webpage + "/ATourOfTheHeliumPrelude#"+preludeNormalized(functionname)); }
+            try { new BrowserProcess(webpage + "/ATourOfTheHeliumPrelude#"+preludeNormalized(handleOperators(functionname))); }
             catch(IOException e) { JOptionPane.showMessageDialog(InterpreterGui.this, "Failed to launch browser, reason:\n"+e.toString(), "Error", JOptionPane.ERROR_MESSAGE); }
         }
 
