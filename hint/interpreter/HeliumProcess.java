@@ -96,7 +96,10 @@ public class HeliumProcess extends AbstractIOProcess
             heliumCommandline.addParameter("--port=" + ProcessEnvironment.getEnvironment().getPort());            
         }
             
-        heliumCommandline.addParameters(ProcessEnvironment.getEnvironment().getAdditionalHeliumParameters());
+        String additional = ProcessEnvironment.getEnvironment().getAdditionalHeliumParameters();
+        if (!additional.trim().equals("")) { // Essential check 
+            heliumCommandline.addParameters(additional);
+        }
         heliumCommandline.addParameter(inputModule.getAbsolutePath());
 
         // System.out.println("Executing: "+heliumCommandline);

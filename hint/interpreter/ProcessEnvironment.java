@@ -29,6 +29,10 @@ import java.util.*;
  *      open -a XCode %f
  *      open -a Aquamacs\ Emacs %f
  *   or /Applications/Aquamacs\ Emacs.app/Contents/MacOS/Aquamacs\ Emacs +%r:%c %f
+ * The drawback of using direct invocation of Aquamacs and other emacses is that a new window is opened.
+ * It would be better than to use emacsclient instead, but then you need to have an emacs server running.
+ * It is possible to make this transparent, but it takes some work. On the Internet you should be able
+ * to find how this can be done.
  *
  * With open you can not add line indicators to jump to. Too bad.
  * Then you need a separate Linux/Unix style command, like bbedit or the direct access to jEdit and Aquamacs\ Emacs, 
