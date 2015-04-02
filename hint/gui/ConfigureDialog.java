@@ -10,7 +10,7 @@ import hint.interpreter.*;
 
 public class ConfigureDialog extends JDialog
 {
-    private JTextField      basePath;
+    // private JTextField      basePath;
     private JTextField      lvmPaths;
     private JTextField      tempPath;
     private JTextField      editorCommandline;
@@ -37,7 +37,7 @@ public class ConfigureDialog extends JDialog
         layoutConstraints = new GridBagConstraints();
         settingsPane.setLayout(layout);
 
-        basePath = new JTextField(ProcessEnvironment.getEnvironment().getBasePath(), 30);
+        // basePath = new JTextField(ProcessEnvironment.getEnvironment().getBasePath(), 30);
         lvmPaths  = new JTextField(ProcessEnvironment.getEnvironment().getLvmPaths(), 30);
         tempPath = new JTextField(ProcessEnvironment.getEnvironment().getTempPath(), 30);
         // JTextField path     = new JTextField(ProcessEnvironment.getEnvironment().getPathEnvironmentSetting(), 30);
@@ -53,7 +53,7 @@ public class ConfigureDialog extends JDialog
 
         layoutConstraints.anchor = GridBagConstraints.WEST;
 
-        add(" Base path ", basePath);
+        // add(" Base path ", basePath);
         add(" Additional lvm paths: ", lvmPaths);
         add(" Editor commandline: ", editorCommandline);
         add(" Browser commandline: ", browserCommandline);
@@ -104,7 +104,7 @@ public class ConfigureDialog extends JDialog
         {
             ProcessEnvironment environment = ProcessEnvironment.getEnvironment();
             
-            environment.setBasePath(basePath.getText());
+            // environment.setBasePath(basePath.getText());
             environment.setLvmPaths(lvmPaths.getText());
             environment.setTempPath(tempPath.getText());
             environment.setEditorCommandlineTemplate(editorCommandline.getText());

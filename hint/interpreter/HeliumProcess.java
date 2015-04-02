@@ -61,7 +61,7 @@ public class HeliumProcess extends AbstractIOProcess
                        )
                    );
 
-        String heliumCommand = ProcessEnvironment.getEnvironment().getBasePath()+File.separator+"bin"+File.separator+HELIUM_COMMAND_NAME;
+        String heliumCommand = ProcessEnvironment.getEnvironment().getHeliumBinDir()+File.separator+HELIUM_COMMAND_NAME;
         Commandline heliumCommandline;
         if (parameters.getModule() != null)
             heliumCommandline = new Commandline(heliumCommand, parameters.getModule().getParentFile());

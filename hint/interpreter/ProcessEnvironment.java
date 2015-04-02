@@ -51,7 +51,7 @@ public class ProcessEnvironment
 {
     private static ProcessEnvironment currentEnvironment = null;
 
-    private String  basePath;
+
     private String  lvmPaths;
     private String  editorCommandlineTemplate;
     private String  browserCommandlineTemplate;
@@ -62,8 +62,10 @@ public class ProcessEnvironment
     private boolean loggingOn;
     private String  host;
     private int     port;
+    private String  heliumBinDir;
+    private String  heliumDataDir;
     
-    public static final String  DEFAULT_BASEPATH                   = "/usr/local/helium";
+    public static final String  HELIUMPATHSCMD                     = "heliumpath";
     public static final String  DEFAULT_LVMPATHS                   = "";
     public static final String  DEFAULT_TEMPPATH                   = ".";
     public static final String  DEFAULT_EDITORCOMMANDLINETEMPLATE  = "\"C:\\apps\\ConTEXT\\ConTEXT.exe\" \"%f\" /g%c:%r";
@@ -75,7 +77,6 @@ public class ProcessEnvironment
     public static final String  DEFAULT_HOST                       = "helium.zoo.cs.uu.nl";
     public static final int     DEFAULT_PORT                       = 5010;
     
-    public static final String  BASEPATH_KEY                   = "basepath";
     public static final String  LVMPATHS_KEY                   = "lvmpaths";
     public static final String  TEMPPATH_KEY                   = "temppath";
     public static final String  EDITORCOMMANDLINETEMPLATE_KEY  = "editorcommandlinetemplate";
@@ -86,10 +87,7 @@ public class ProcessEnvironment
     public static final String  LOGGINGON_KEY                  = "loggingon";
     public static final String  HOST_KEY                       = "host";
     public static final String  PORT_KEY                       = "port";
-    
-    
-    public static final String CONFIG_FILENAME = ".hint.conf";
-
+    public static final String  CONFIG_FILENAME = "hint.conf";
 
     public static synchronized ProcessEnvironment getEnvironment()
     {
@@ -99,15 +97,25 @@ public class ProcessEnvironment
         return currentEnvironment;
     }
 
-
     public static synchronized void setEnvironment(ProcessEnvironment context)
     {
         currentEnvironment = context;
     }
 
-    public ProcessEnvironment()
+    public ProcessEnvironment() 
     {
-        setBasePath(DEFAULT_BASEPATH);
+        try { 
+           processHeliumPaths();
+        }
+        catch (IOException e) {
+          System.out.println("Unrecoverable error:");
+          System.out.println("Hint cannot be used without it knowing where the Helium libraries and configuration files are.");
+          System.out.println("It finds out by running the program ``heliumpath'', but it seems that this does not work.");
+          System.out.println("Possible solutions: install helium (1.8.1 or higher) from Hackage, or add ``heliumpath'' to your execution path.");
+          System.out.println("Hint will now terminate itself.");
+          System.exit(-1);
+        }
+        
         setLvmPaths(DEFAULT_LVMPATHS);
         setTempPath(DEFAULT_TEMPPATH);
         setEditorCommandlineTemplate(DEFAULT_EDITORCOMMANDLINETEMPLATE);
@@ -117,17 +125,37 @@ public class ProcessEnvironment
         setOverloading(DEFAULT_OVERLOADINGON);
         setLoggingOn(DEFAULT_LOGGINGON);
         setHost(DEFAULT_HOST);
-        setPort(DEFAULT_PORT);
+        setPort(DEFAULT_PORT);                
     }
 
-
+    public static String execCmd(String cmd) throws IOException {
+        Process proc = Runtime.getRuntime().exec(cmd);
+        java.io.InputStream is = proc.getInputStream();
+        
+        java.util.Scanner s = new java.util.Scanner(is).useDelimiter("\\A");
+        return s.hasNext() ? s.next() : "";    
+    }
+    
+    private void processHeliumPaths() throws IOException
+    {
+        // Read in from running 
+        Process proc = Runtime.getRuntime().exec(HELIUMPATHSCMD,null);
+        java.io.InputStream is = proc.getInputStream();
+        
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        heliumBinDir  = reader.readLine();
+        heliumDataDir = reader.readLine();
+        
+        // Debugging purposes only: System.out.println("Got: \n"+heliumBinDir+" and\n"+heliumDataDir);
+        
+    }
+    
     public void saveSettings() throws IOException
     {
-        String userHomeDirectory = System.getProperty("user.home");
-        File configFile = new File(userHomeDirectory, CONFIG_FILENAME);
+        String dataDirectory = getHeliumDataDir();
+        File configFile = new File(dataDirectory, CONFIG_FILENAME);
 
         Properties props = new Properties();
-        props.setProperty(BASEPATH_KEY, getBasePath());
         props.setProperty(LVMPATHS_KEY, getLvmPaths());        
         props.setProperty(TEMPPATH_KEY, getTempPath());        
         props.setProperty(EDITORCOMMANDLINETEMPLATE_KEY,  getEditorCommandlineTemplate());
@@ -148,8 +176,8 @@ public class ProcessEnvironment
 
     public void loadSettings() throws IOException
     {
-        String userHomeDirectory = System.getProperty("user.home");
-        File configFile = new File(userHomeDirectory, CONFIG_FILENAME);
+        String dataDirectory = getHeliumDataDir();
+        File configFile = new File(dataDirectory, CONFIG_FILENAME);
 
         if (!configFile.exists())
             return;
@@ -158,9 +186,6 @@ public class ProcessEnvironment
         InputStream inputStream = new FileInputStream(configFile);
         props.load(inputStream);
         inputStream.close();
-
-        if (props.containsKey(BASEPATH_KEY))
-            setBasePath(props.getProperty(BASEPATH_KEY));
 
         if (props.containsKey(LVMPATHS_KEY))
             setLvmPaths(props.getProperty(LVMPATHS_KEY));
@@ -215,19 +240,19 @@ public class ProcessEnvironment
     }
 
 
-    // Returns one string with all LVM containing directories: the base path, . and the
-    // manually added ones (by the user).
+    // Returns one string with all LVM containing directories: the base lib
+    // path, and the manually added ones (by the user).
     public String getLVMEnvironmentSetting()
     {
-        // System.out.println(getBasePath());
-        String path = getBasePath();
-        String simple = "simple";
+        String path = getHeliumDataDir(); // Lib is in the shared data dir
+        final String lib = "lib";
+        final String simple = "simple";
 
         // strip off trailing path seperator
         if (path.length() >= 2 && path.endsWith(":"))
             path = path.substring(0, path.length()-2);
-
-        path = path + File.separator + "lib";
+        
+        path += File.separator + lib;
         
         if (!overloadingOn)
             path = path + File.separator + simple;
@@ -260,25 +285,37 @@ public class ProcessEnvironment
         tempPath = temppath;
     }
 
-    public String getBasePath()
+    public String getHeliumBinDir()
     {
-        return basePath;
+        return heliumBinDir;
     }
 
-
-    public void setBasePath(String basepath)
+    public void setHeliumBinDir(String heliumbindir)
     {
-        if (basepath == null)
-            throw new IllegalArgumentException("basepath is null");
+        if (heliumbindir == null)
+            throw new IllegalArgumentException("heliumBinDir is null");
 
-        basePath = basepath;
+        heliumBinDir = heliumbindir;
+    }
+    
+    // Contains both the config file and the Helium libs
+    public String getHeliumDataDir()
+    {
+        return heliumDataDir;
+    }
+
+    public void setHeliumDataDir(String heliumdatadir)
+    {
+        if (heliumdatadir == null)
+            throw new IllegalArgumentException("heliumDataDir is null");
+
+        heliumDataDir = heliumdatadir;
     }
 
     public String getLvmPaths()
     {
         return lvmPaths;
     }
-
 
     public void setLvmPaths(String lvmpaths)
     {
