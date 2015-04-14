@@ -33,7 +33,13 @@ public class LVMProcess extends AbstractIOProcess
         lvmCommandline.addParameter(modulePath.getAbsolutePath());
         
         // System.out.println("Executing: "+lvmCommandline);
-        
-        execute(lvmCommandline);
+        try {
+          execute(lvmCommandline);
+        }
+        catch (IOException e) {
+          System.out.println("Could not run ``lvmrun''. Did you maybe forget to install it?");
+          System.out.println("Do so by running ``cabal install lvmrun'' from the commandline");
+          System.out.println("The Java run time returned the following exception:\n "+ e);         
+        }
     }
 }
