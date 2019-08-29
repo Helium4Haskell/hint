@@ -16,7 +16,7 @@ Java-based programming environment Hint, originally developed by Arie
 Middelkoop.
 
 [**Download the Hint 1.8.1 jar
-file**](http://www.cs.uu.nl/people/jur/Hint-1.8.1.jar)
+file**](http://www.cs.uu.nl/people/jur/downloads/Hint-1.8.1.jar)
 
 The program can be run from the command line in the usual way
 
@@ -28,8 +28,7 @@ that you need Hint version 1.8.1 or higher for this to work.
 ### Beyond the standard distributions
 
 All software associated with Helium is available from a publicly
-available git repository at <https://github.com/Helium4Haskell/>, in
-particular the repositories.
+available git repository at <https://github.com/Helium4Haskell/>.
 
 If you think you can do something for us on the above, please contact
 [us](mailto:helium4haskell@gmail.com).
